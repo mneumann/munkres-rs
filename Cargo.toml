@@ -2,7 +2,7 @@
 name = "munkres"
 version = "0.0.1"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
-license = "BSD"
+license = "BSD-3-Clause"
 repository = "https://github.com/mneumann/munkres-rs"
 description = "Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem"
 
