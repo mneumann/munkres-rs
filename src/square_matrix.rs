@@ -49,7 +49,7 @@ impl<T: Copy> SquareMatrix<T> {
     pub fn n(&self) -> usize { self.n }
     pub fn into_vec(self) -> Vec<T> { self.data }
 
-    #[inline(always)]
+    #[inline]
     pub fn map_row<F: Fn(T) -> T>(&mut self, row: usize, f: F) {
         assert!(row < self.n);
 
@@ -61,7 +61,7 @@ impl<T: Copy> SquareMatrix<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn map_col<F: Fn(T) -> T>(&mut self, col: usize, f: F) {
         for row in 0..self.n {
             let n = f(self[(row, col)]);
