@@ -51,9 +51,13 @@ impl<T: Copy> SquareMatrix<T> {
 
     #[inline(always)]
     pub fn map_row<F: Fn(T) -> T>(&mut self, row: usize, f: F) {
-        for col in 0..self.n {
-            let n = f(self[(row, col)]);
-            self[(row, col)] = n;
+        assert!(row < self.n);
+
+        let mut row_slice = &mut self.data[row*self.n .. (row+1)*self.n];
+        debug_assert!(row_slice.len() == self.n);
+
+        for elm in row_slice.iter_mut() {
+            *elm = f(*elm);
         }
     }
 
