@@ -244,17 +244,17 @@ fn step5<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Co
 
     let mut path: Vec<(usize, usize)> = Vec::new();
 
+    let mut prev_col = z0.1;
     path.push(z0);
 
     loop {
-        let &(_, prev_col) = path.last().unwrap();
-
         match marks.find_first_star_in_col(prev_col) {
             Some(row) => {
                 path.push((row, prev_col));
 
                 if let Some(col) = marks.find_first_prime_in_row(row) {
                     path.push((row, col));
+                    prev_col = col;
                 } else {
                     // XXX
                     panic!("no prime in row");
