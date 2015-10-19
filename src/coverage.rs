@@ -21,18 +21,6 @@ impl Coverage {
     }
 
     #[inline]
-    pub fn is_covered(&self, pos: (usize, usize)) -> bool {
-        match pos {
-            (row, col) => self.rows[row] || self.cols[col]
-        }
-    }
-
-    #[inline]
-    pub fn is_uncovered(&self, pos: (usize, usize)) -> bool {
-        !self.is_covered(pos)
-    }
-
-    #[inline]
     pub fn is_row_covered(&self, row: usize) -> bool {
         self.rows[row]
     }
