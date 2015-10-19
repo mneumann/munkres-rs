@@ -50,11 +50,22 @@ impl<T: Copy> SquareMatrix<T> {
     pub fn into_vec(self) -> Vec<T> { self.data }
 
     #[inline]
-    pub fn map_row<F: Fn(T) -> T>(&mut self, row: usize, f: F) {
-        assert!(row < self.n);
+    pub fn row_slice(&self, row: usize) -> &[T] {
+        &self.data[row*self.n .. (row+1)*self.n]
+    }
 
-        let mut row_slice = &mut self.data[row*self.n .. (row+1)*self.n];
-        debug_assert!(row_slice.len() == self.n);
+    #[inline]
+    pub fn row_slice_mut(&mut self, row: usize) -> &mut [T] {
+        &mut self.data[row*self.n .. (row+1)*self.n]
+    }
+ 
+    #[inline]
+    pub fn map_row<F: Fn(T) -> T>(&mut self, row: usize, f: F) {
+        let n = self.n;
+        assert!(row < n);
+
+        let mut row_slice = self.row_slice_mut(row);
+        debug_assert!(row_slice.len() == n);
 
         for elm in row_slice.iter_mut() {
             *elm = f(*elm);

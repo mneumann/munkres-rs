@@ -62,9 +62,10 @@ impl<T: WeightNum> WeightMatrix<T> {
 
     /// Return the minimum element of row `row`.
     fn min_of_row(&self, row: usize) -> T {
-        let mut min = self.c[(row, 0)];
-        for col in 1 .. self.n() {
-            min = cmp::min(min, self.c[(row, col)]);
+        let row_slice = self.c.row_slice(row);
+        let mut min = row_slice[0];
+        for &val in &row_slice[1..] {
+            min = cmp::min(min, val);
         }
         min
     }  
