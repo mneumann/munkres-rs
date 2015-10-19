@@ -14,6 +14,7 @@
 //    * Reuse path Vec in step5
 //    * Cleanup
 //    * More test cases
+//    * Non-square matrices
 
 extern crate bit_vec;
 
@@ -38,12 +39,14 @@ pub struct WeightMatrix<T: WeightNum> {
 
 impl<T: WeightNum> WeightMatrix<T> { 
     pub fn from_row_vec(n: usize, data: Vec<T>) -> WeightMatrix<T> {
+        assert!(n > 0);
         WeightMatrix{c: SquareMatrix::from_row_vec(n, data)}
     }
 
     #[inline(always)]
     fn n(&self) -> usize { self.c.n() }
 
+    #[inline(always)]
     fn is_element_zero(&self, pos: (usize, usize)) -> bool {
         self.c[pos] == T::zero()
     }
@@ -59,23 +62,17 @@ impl<T: WeightNum> WeightMatrix<T> {
 
     // Subtract `val` from every element in row `row`. 
     fn sub_row(&mut self, row: usize, val: T) {
-        for col in 0 .. self.n() {
-            self.c[(row, col)] = self.c[(row, col)] - val;
-        }
+        self.c.map_row(row, |cur| cur - val);
     }
 
     // Subtract `val` from every element in column `col`. 
     fn sub_col(&mut self, col: usize, val: T) {
-        for row in 0 .. self.n() {
-            self.c[(row, col)] = self.c[(row, col)] - val;
-        }
+        self.c.map_col(col, |cur| cur - val);
     }
 
     // Add `val` to every element in row `row`. 
     fn add_row(&mut self, row: usize, val: T) {
-        for col in 0 .. self.n() {
-            self.c[(row, col)] = self.c[(row, col)] - val;
-        }
+        self.c.map_row(row, |cur| cur + val);
     }
 
     /// Find the first uncovered element with value 0 `find_a_zero`

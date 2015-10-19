@@ -34,12 +34,30 @@ impl<T> IndexMut<(usize, usize)> for SquareMatrix<T> {
     }
 }
 
-impl<T> SquareMatrix<T> {
+impl<T: Copy> SquareMatrix<T> {
     pub fn from_row_vec(n: usize, data: Vec<T>) -> SquareMatrix<T> {
+        assert!(n > 0); 
         assert!(data.len() == n*n);
         SquareMatrix {n: n, data: data}
     }
     #[inline(always)]
     pub fn n(&self) -> usize { self.n }
     pub fn into_vec(self) -> Vec<T> { self.data }
+
+    #[inline(always)]
+    pub fn map_row<F: Fn(T) -> T>(&mut self, row: usize, f: F) {
+        for col in 0..self.n {
+            let n = f(self[(row, col)]);
+            self[(row, col)] = n;
+        }
+    }
+
+    #[inline(always)]
+    pub fn map_col<F: Fn(T) -> T>(&mut self, col: usize, f: F) {
+        for row in 0..self.n {
+            let n = f(self[(row, col)]);
+            self[(row, col)] = n;
+        }
+    }
+
 }
