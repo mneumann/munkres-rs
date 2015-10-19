@@ -13,6 +13,7 @@
 // TODO:
 //    * Reuse path Vec in step5
 //    * Cleanup
+//    * More test cases
 
 extern crate bit_vec;
 
@@ -22,7 +23,7 @@ use std::cmp;
 use square_matrix::SquareMatrix;
 use coverage::Coverage;
 
-mod square_matrix;
+pub mod square_matrix;
 mod coverage;
 
 pub trait WeightNum: Ord + Eq + Copy + Sub<Output=Self> + Add<Output=Self> + Zero {}
@@ -56,15 +57,6 @@ impl<T: WeightNum> WeightMatrix<T> {
         min
     }  
 
-    /// Return the minimum element of column `col`.
-    fn min_of_col(&self, col: usize) -> T {
-        let mut min = self.c[(0, col)];
-        for row in 1 .. self.n() {
-            min = cmp::min(min, self.c[(row, col)]);
-        }
-        min
-    }
-
     // Subtract `val` from every element in row `row`. 
     fn sub_row(&mut self, row: usize, val: T) {
         for col in 0 .. self.n() {
@@ -89,7 +81,6 @@ impl<T: WeightNum> WeightMatrix<T> {
     /// Find the first uncovered element with value 0 `find_a_zero`
     fn find_uncovered_zero(&self, cov: &Coverage) -> Option<(usize, usize)> {
         let n = self.n();
-        // XXX: Refactor into iterator
 
         for col in 0 .. n {
             if cov.is_col_covered(col) { continue; }
@@ -99,6 +90,7 @@ impl<T: WeightNum> WeightMatrix<T> {
                 }
             }
         }
+
         return None;
     }
 
@@ -106,7 +98,6 @@ impl<T: WeightNum> WeightMatrix<T> {
     fn find_uncovered_min(&self, cov: &Coverage) -> Option<T> {
         let mut min = None;
         let n = self.n();
-        // XXX: Refactor into iterator
         for row in 0 .. n {
             if cov.is_row_covered(row) { continue; }
             for col in 0..n {
@@ -161,6 +152,7 @@ impl MarkMatrix {
         }
     }
 
+    #[cfg(test)]
     fn get(&self, pos: (usize, usize)) -> Mark {
         self.marks[pos]
     }
@@ -349,7 +341,7 @@ fn step5<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Co
     path.push(z0);
 
     loop {
-        let &(prev_row, prev_col) = path.last().unwrap();
+        let &(_, prev_col) = path.last().unwrap();
 
         match marks.find_first_star_in_col(prev_col) {
             Some(row) => {
