@@ -9,6 +9,13 @@
 /// https://github.com/bmc/munkres/blob/master/munkres.py
 /// which is Copyright (c) 2008 Brian M. Clapper.
 
+
+// TODO:
+//    * Use bitarrays for Coverage.
+//    * Implement SquareMatrix. Get rid of nalgebra.
+//    * Reuse path Vec in step5
+//    * Cleanup
+
 extern crate nalgebra as na;
 
 use na::{DMat, BaseNum};
@@ -16,8 +23,6 @@ use std::ops::{Add, Neg, Sub};
 use std::num::Zero;
 use std::cmp;
 
-// XXX: optimize: Use bool array. Use only one array with 2*n entries.
-// 
 #[derive(Debug)]
 struct Coverage {
     n: usize,
@@ -130,7 +135,6 @@ impl<T> WeightMatrix<T> where T: BaseNum + Ord + Eq + Sub<Output=T> + Copy {
             self.c[(row, col)] = self.c[(row, col)] - val;
         }
     }
-
 
     /// Find the first uncovered element with value 0 `find_a_zero`
     fn find_uncovered_zero(&self, cov: &Coverage) -> Option<(usize, usize)> {
