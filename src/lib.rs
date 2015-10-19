@@ -23,74 +23,10 @@ use std::ops::{Neg, Sub};
 use std::num::Zero;
 use std::cmp;
 use square_matrix::SquareMatrix;
-use bit_vec::BitVec;
+use coverage::Coverage;
 
 mod square_matrix;
-
-#[derive(Debug)]
-struct Coverage {
-    rows: BitVec,
-    cols: BitVec,
-}
-
-impl Coverage {
-    // XXX: Is this needed?
-    fn n(&self) -> usize {
-        let n1 = self.rows.len();
-        let n2 = self.cols.len();
-        assert!(n1 == n2);
-        return n1;
-    }
-
-    fn new(n: usize) -> Coverage {
-        Coverage {rows: BitVec::from_elem(n, false),
-                  cols: BitVec::from_elem(n, false)}
-    }
-
-    fn is_covered(&self, pos: (usize, usize)) -> bool {
-        match pos {
-            (row, col) => self.rows[row] || self.cols[col]
-        }
-    }
-
-    fn is_uncovered(&self, pos: (usize, usize)) -> bool {
-        !self.is_covered(pos)
-    }
-
-    fn is_row_covered(&self, row: usize) -> bool {
-        self.rows[row]
-    }
-
-    fn is_col_covered(&self, col: usize) -> bool {
-        self.cols[col]
-    }
-
-    fn cover(&mut self, pos: (usize, usize)) {
-        match pos {
-            (row, col) => {
-                self.cover_row(row);
-                self.cover_col(col);
-            }
-        }
-    }
-
-    fn cover_col(&mut self, col: usize) {
-        self.cols.set(col, true);
-    }
-
-    fn uncover_col(&mut self, col: usize) {
-        self.cols.set(col, false);
-    }
-
-    fn cover_row(&mut self, row: usize) {
-        self.rows.set(row, true);
-    }
-
-    fn clear(&mut self) {
-       self.rows.clear();
-       self.cols.clear();
-    } 
-}
+mod coverage;
 
 #[derive(Debug)]
 pub struct WeightMatrix<T: Copy> {
