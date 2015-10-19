@@ -88,12 +88,12 @@ impl Coverage {
 }
 
 #[derive(Debug)]
-struct WeightMatrix<T: Copy> {
+pub struct WeightMatrix<T: Copy> {
     c: SquareMatrix<T>
 }
 
 impl<T> WeightMatrix<T> where T: BaseNum + Ord + Eq + Sub<Output=T> + Copy {
-    fn from_row_vec(n: usize, data: Vec<T>) -> WeightMatrix<T> {
+    pub fn from_row_vec(n: usize, data: Vec<T>) -> WeightMatrix<T> {
         WeightMatrix{c: SquareMatrix::from_row_vec(n, data)}
     }
 
@@ -470,7 +470,7 @@ where T: BaseNum + Ord + Neg<Output=T> + Eq + Copy + Neg<Output=T> {
     return Step::Step4(None);
 }
 
-fn compute<T>(weights: &mut WeightMatrix<T>) -> Vec<(usize,usize)>
+pub fn solve_assignment<T>(weights: &mut WeightMatrix<T>) -> Vec<(usize,usize)>
 where T: BaseNum + Ord + Neg<Output=T> + Eq + Copy {
    let n = weights.n();
 
