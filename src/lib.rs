@@ -11,15 +11,12 @@
 
 
 // TODO:
-//    * Implement SquareMatrix. Get rid of nalgebra.
 //    * Reuse path Vec in step5
 //    * Cleanup
 
-extern crate nalgebra as na;
 extern crate bit_vec;
 
-use na::{DMat, BaseNum};
-use std::ops::{Neg, Sub};
+use std::ops::{Add, Sub};
 use std::num::Zero;
 use std::cmp;
 use square_matrix::SquareMatrix;
@@ -28,12 +25,17 @@ use coverage::Coverage;
 mod square_matrix;
 mod coverage;
 
+pub trait WeightNum: Ord + Eq + Copy + Sub<Output=Self> + Add<Output=Self> + Zero {}
+
+impl<T> WeightNum for T 
+where T: Ord + Eq + Copy + Sub<Output=T> + Add<Output=T> + Zero { }
+
 #[derive(Debug)]
-pub struct WeightMatrix<T: Copy> {
+pub struct WeightMatrix<T: WeightNum> {
     c: SquareMatrix<T>
 }
 
-impl<T> WeightMatrix<T> where T: BaseNum + Ord + Eq + Sub<Output=T> + Copy {
+impl<T: WeightNum> WeightMatrix<T> { 
     pub fn from_row_vec(n: usize, data: Vec<T>) -> WeightMatrix<T> {
         WeightMatrix{c: SquareMatrix::from_row_vec(n, data)}
     }
@@ -229,8 +231,7 @@ impl MarkMatrix {
 
 /// For each row of the matrix, find the smallest element and
 /// subtract it from every element in its row. Go to Step 2.
-fn step1<T>(c: &mut WeightMatrix<T>) -> Step 
-where T: BaseNum + Ord {
+fn step1<T: WeightNum>(c: &mut WeightMatrix<T>) -> Step {
     let n = c.n();
 
     for row in 0..n {
@@ -245,8 +246,7 @@ where T: BaseNum + Ord {
 /// Find a zero (Z) in the resulting matrix. If there is no starred
 /// zero in its row or column, star Z. Repeat for each element in the
 /// matrix. Go to Step 3.
-fn step2<T>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step 
-where T: BaseNum + Ord + Neg<Output=T> + Eq {
+fn step2<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step {
     let n = c.n();
     
     assert!(marks.n() == n);
@@ -272,8 +272,7 @@ where T: BaseNum + Ord + Neg<Output=T> + Eq {
 /// Cover each column containing a starred zero. If K columns are
 /// covered, the starred zeros describe a complete set of unique
 /// assignments. In this case, Go to DONE, otherwise, Go to Step 4.
-fn step3<T>(c: &WeightMatrix<T>, marks: &MarkMatrix, cov: &mut Coverage) -> Step 
-where T: BaseNum + Ord + Neg<Output=T> + Eq {
+fn step3<T: WeightNum>(c: &WeightMatrix<T>, marks: &MarkMatrix, cov: &mut Coverage) -> Step {
     let n = c.n();
     
     assert!(marks.n() == n);
@@ -302,9 +301,7 @@ where T: BaseNum + Ord + Neg<Output=T> + Eq {
 /// cover this row and uncover the column containing the starred
 /// zero. Continue in this manner until there are no uncovered zeros
 /// left. Save the smallest uncovered value and Go to Step 6.
-fn step4<T>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
-where T: BaseNum + Ord + Neg<Output=T> + Eq {
-
+fn step4<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step {
     let n = c.n();
 
     assert!(marks.n() == n);
@@ -341,9 +338,7 @@ where T: BaseNum + Ord + Neg<Output=T> + Eq {
 /// that has no starred zero in its column. Unstar each starred zero
 /// of the series, star each primed zero of the series, erase all
 /// primes and uncover every line in the matrix. Return to Step 3
-fn step5<T>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize)) -> Step
-where T: BaseNum + Ord + Neg<Output=T> + Eq {
-
+fn step5<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize)) -> Step {
     let n = c.n();
 
     assert!(marks.n() == n);
@@ -388,9 +383,7 @@ where T: BaseNum + Ord + Neg<Output=T> + Eq {
 /// row, and subtract it from every element of each uncovered column.
 /// Return to Step 4 without altering any stars, primes, or covered
 /// lines.
-fn step6<T>(c: &mut WeightMatrix<T>, cov: &Coverage) -> Step
-where T: BaseNum + Ord + Neg<Output=T> + Eq + Copy + Neg<Output=T> { 
-
+fn step6<T: WeightNum>(c: &mut WeightMatrix<T>, cov: &Coverage) -> Step {
     let n = c.n();
     assert!(cov.n() == n);
 
@@ -409,8 +402,7 @@ where T: BaseNum + Ord + Neg<Output=T> + Eq + Copy + Neg<Output=T> {
     return Step::Step4(None);
 }
 
-pub fn solve_assignment<T>(weights: &mut WeightMatrix<T>) -> Vec<(usize,usize)>
-where T: BaseNum + Ord + Neg<Output=T> + Eq + Copy {
+pub fn solve_assignment<T: WeightNum>(weights: &mut WeightMatrix<T>) -> Vec<(usize,usize)> {
    let n = weights.n();
 
    let mut marks = MarkMatrix::new(n);

@@ -4,5 +4,4 @@ version = "0.0.1"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 
 [dependencies]
-nalgebra = "*"
 bit-vec = "*"
