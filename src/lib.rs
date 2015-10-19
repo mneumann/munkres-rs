@@ -1,4 +1,5 @@
 #![feature(zero_one)]
+#![feature(test)]
 
 /// Kuhn-Munkres Algorithm (also called Hungarian algorithm) for solving the 
 /// Assignment Problem.
@@ -17,6 +18,9 @@
 //    * Non-square matrices
 
 extern crate bit_vec;
+
+#[cfg(test)]
+extern crate test;
 
 use std::ops::{Add, Sub};
 use std::num::Zero;
@@ -612,4 +616,19 @@ fn test_solve_random10() {
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(10, c);
     let _matching = solve_assignment(&mut weights);
+}
+
+#[bench]
+fn bench_solve100(b: &mut test::Bencher) {
+    const N: usize = 100;
+    let matrix: Vec<i32> = (0..N*N).map(|i| {
+        let row = i/N;
+        let col = i%N;
+        (row * col) as i32
+    }).collect();
+
+    b.iter(|| {
+        let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, matrix.clone());
+        let _matching = solve_assignment(&mut weights);
+    });
 }
