@@ -23,9 +23,14 @@ use std::num::Zero;
 use std::cmp;
 use square_matrix::SquareMatrix;
 use coverage::Coverage;
+use mark_matrix::MarkMatrix;
+
+#[cfg(test)]
+use mark_matrix::Mark;
 
 pub mod square_matrix;
 mod coverage;
+mod mark_matrix;
 
 pub trait WeightNum: Ord + Eq + Copy + Sub<Output=Self> + Add<Output=Self> + Zero {}
 
@@ -120,102 +125,6 @@ enum Step {
     Step5(usize, usize),
     Step6,
     Done,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Mark {
-   None,
-   Star,
-   Prime
-}
-
-#[derive(Debug)]
-struct MarkMatrix {
-    marks: SquareMatrix<Mark>
-}
-
-impl MarkMatrix {
-    fn new(n: usize) -> MarkMatrix {
-        MarkMatrix {marks: SquareMatrix::from_row_vec(n, (0..n*n).map(|_| Mark::None).collect())}
-    }
-
-    fn n(&self) -> usize { self.marks.n() }
-
-    fn toggle_star(&mut self, pos: (usize, usize)) {
-        if self.is_star(pos) {
-            self.unmark(pos);
-        } else {
-            self.star(pos);
-        }
-    }
-
-    #[cfg(test)]
-    fn get(&self, pos: (usize, usize)) -> Mark {
-        self.marks[pos]
-    }
-
-    fn unmark(&mut self, pos: (usize, usize)) {
-       self.marks[pos] = Mark::None; 
-    }
-
-    fn star(&mut self, pos: (usize, usize)) {
-       self.marks[pos] = Mark::Star; 
-    }
-
-    fn prime(&mut self, pos: (usize, usize)) {
-       self.marks[pos] = Mark::Prime; 
-    }
-
-    fn is_star(&self, pos: (usize, usize)) -> bool {
-        match self.marks[pos] {
-            Mark::Star => true,
-            _          => false 
-        }
-    }
-
-    fn is_prime(&self, pos: (usize, usize)) -> bool {
-        match self.marks[pos] {
-            Mark::Prime => true,
-            _          => false 
-        }
-    }
-
-    fn find_first_star_in_row(&self, row: usize) -> Option<usize> {
-        for col in 0..self.n() {
-            if self.is_star((row, col)) {
-                return Some(col);
-            }
-        }
-        return None;
-    }
-
-    fn find_first_prime_in_row(&self, row: usize) -> Option<usize> {
-        for col in 0..self.n() {
-            if self.is_prime((row, col)) {
-                return Some(col);
-            }
-        }
-        return None;
-    }
-
-    fn find_first_star_in_col(&self, col: usize) -> Option<usize> {
-        for row in 0..self.n() {
-            if self.is_star((row, col)) {
-                return Some(row);
-            }
-        }
-        return None;
-    }
-
-    fn clear_primes(&mut self) {
-        for row in 0..self.n() {
-            for col in 0..self.n() {
-                if let Mark::Prime = self.marks[(row, col)] {
-                    self.marks[(row, col)] = Mark::None;
-                }
-            }
-        }
-    }
 }
 
 /// For each row of the matrix, find the smallest element and
