@@ -22,6 +22,9 @@ use na::{DMat, BaseNum};
 use std::ops::{Add, Neg, Sub};
 use std::num::Zero;
 use std::cmp;
+use square_matrix::SquareMatrix;
+
+mod square_matrix;
 
 #[derive(Debug)]
 struct Coverage {
@@ -86,12 +89,16 @@ impl Coverage {
 
 #[derive(Debug)]
 struct WeightMatrix<T: Copy> {
-    n: usize,
-    c: DMat<T>
+    c: SquareMatrix<T>
 }
 
 impl<T> WeightMatrix<T> where T: BaseNum + Ord + Eq + Sub<Output=T> + Copy {
-    fn n(&self) -> usize { self.n }
+    fn from_row_vec(n: usize, data: Vec<T>) -> WeightMatrix<T> {
+        WeightMatrix{c: SquareMatrix::from_row_vec(n, data)}
+    }
+
+    #[inline(always)]
+    fn n(&self) -> usize { self.c.n() }
 
     fn is_element_zero(&self, pos: (usize, usize)) -> bool {
         self.c[pos] == T::zero()
@@ -100,7 +107,7 @@ impl<T> WeightMatrix<T> where T: BaseNum + Ord + Eq + Sub<Output=T> + Copy {
     /// Return the minimum element of row `row`.
     fn min_of_row(&self, row: usize) -> T {
         let mut min = self.c[(row, 0)];
-        for col in 1 .. self.n {
+        for col in 1 .. self.n() {
             min = cmp::min(min, self.c[(row, col)]);
         }
         min
@@ -109,7 +116,7 @@ impl<T> WeightMatrix<T> where T: BaseNum + Ord + Eq + Sub<Output=T> + Copy {
     /// Return the minimum element of column `col`.
     fn min_of_col(&self, col: usize) -> T {
         let mut min = self.c[(0, col)];
-        for row in 1 .. self.n {
+        for row in 1 .. self.n() {
             min = cmp::min(min, self.c[(row, col)]);
         }
         min
@@ -117,21 +124,21 @@ impl<T> WeightMatrix<T> where T: BaseNum + Ord + Eq + Sub<Output=T> + Copy {
 
     // Subtract `val` from every element in row `row`. 
     fn sub_row(&mut self, row: usize, val: T) {
-        for col in 0 .. self.n {
+        for col in 0 .. self.n() {
             self.c[(row, col)] = self.c[(row, col)] - val;
         }
     }
 
     // Subtract `val` from every element in column `col`. 
     fn sub_col(&mut self, col: usize, val: T) {
-        for row in 0 .. self.n {
+        for row in 0 .. self.n() {
             self.c[(row, col)] = self.c[(row, col)] - val;
         }
     }
 
     // Add `val` to every element in row `row`. 
     fn add_row(&mut self, row: usize, val: T) {
-        for col in 0 .. self.n {
+        for col in 0 .. self.n() {
             self.c[(row, col)] = self.c[(row, col)] - val;
         }
     }
@@ -513,33 +520,30 @@ where T: BaseNum + Ord + Neg<Output=T> + Eq + Copy {
 
 #[test]
 fn test_step1() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[250, 400, 350,
-                  400, 600, 350,
-                  200, 400, 250]);
+    let c = vec![250, 400, 350,
+                 400, 600, 350,
+                 200, 400, 250];
 
-    let mut weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
 
     let next_step = step1(&mut weights);
     assert_eq!(Step::Step2, next_step);
 
-    let exp = DMat::from_row_vec(3, 3, 
-                &[0, 150, 100,
-                  50, 250, 0,
-                  0, 200, 50]);
+    let exp = vec![0, 150, 100,
+                   50, 250, 0,
+                   0, 200, 50];
 
-    assert_eq!(exp, weights.c);
+    assert_eq!(exp, weights.c.into_vec());
 }
 
 
 #[test]
 fn test_step2() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[0, 150, 100,
-                  50, 250, 0,
-                  0, 200, 50]);
+    let c = vec![0, 150, 100,
+                 50, 250, 0,
+                 0, 200, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
@@ -579,12 +583,11 @@ fn test_step2() {
 
 #[test]
 fn test_step3() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[0, 150, 100,
-                  50, 250, 0,
-                  0, 200, 50]);
+    let c = vec![0, 150, 100,
+                 50, 250, 0,
+                 0, 200, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
@@ -605,12 +608,11 @@ fn test_step3() {
 
 #[test]
 fn test_step4_case1() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[0, 150, 100,
-                  50, 250, 0,
-                  0, 200, 50]);
+    let c = vec![0, 150, 100,
+                 50, 250, 0,
+                 0, 200, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
@@ -645,12 +647,11 @@ fn test_step4_case1() {
 
 #[test]
 fn test_step6() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[0, 150, 100,
-                  50, 250, 0,
-                  0, 200, 50]);
+    let c = vec![0, 150, 100,
+                 50, 250, 0,
+                 0, 200, 50];
 
-    let mut weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
@@ -663,22 +664,20 @@ fn test_step6() {
 
     assert_eq!(Step::Step4(None), next_step);
 
-    let exp = DMat::from_row_vec(3, 3, 
-                &[0, 0, 100,
-                  50, 100, 0,
-                  0, 50, 50]);
+    let exp = vec![0, 0, 100,
+                   50, 100, 0,
+                   0, 50, 50];
 
-    assert_eq!(exp, weights.c);
+    assert_eq!(exp, weights.c.into_vec());
 }
 
 #[test]
 fn test_step4_case2() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[0, 0, 100,
-                  50, 100, 0,
-                  0, 50, 50]);
+    let c = vec![0, 0, 100,
+                 50, 100, 0,
+                 0, 50, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
@@ -713,12 +712,11 @@ fn test_step4_case2() {
 
 #[test]
 fn test_step5() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[0, 0, 100,
-                  50, 100, 0,
-                  0, 50, 50]);
+    let c = vec![0, 0, 100,
+                 50, 100, 0,
+                 0, 50, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
@@ -758,12 +756,11 @@ fn test_step5() {
 
 #[test]
 fn test_1() {
-    let m = DMat::from_row_vec(3, 3, 
-                &[250, 400, 350,
-                  400, 600, 350,
-                  200, 400, 250]);
+    let c = vec![250, 400, 350,
+                 400, 600, 350,
+                 200, 400, 250];
 
-    let mut weights: WeightMatrix<i32> = WeightMatrix{n: 3, c: m};
+    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let matching = compute(&mut weights);
 
     assert_eq!(vec![(0,1), (1,2), (2,0)], matching);
