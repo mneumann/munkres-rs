@@ -618,17 +618,30 @@ fn test_solve_random10() {
     let _matching = solve_assignment(&mut weights);
 }
 
-#[bench]
-fn bench_solve100(b: &mut test::Bencher) {
-    const N: usize = 100;
-    let matrix: Vec<i32> = (0..N*N).map(|i| {
-        let row = i/N;
-        let col = i%N;
+#[cfg(test)]
+fn gen_matrix(n: usize) -> Vec<i32> {
+    (0..n*n).map(|i| {
+        let row = i/n;
+        let col = i%n;
         (row * col) as i32
-    }).collect();
+    }).collect()
+}
 
+#[cfg(test)]
+fn bench_solve_n(n: usize, b: &mut test::Bencher) {
+    let matrix = gen_matrix(n);
     b.iter(|| {
-        let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, matrix.clone());
+        let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(n, matrix.clone());
         let _matching = solve_assignment(&mut weights);
     });
+}
+
+#[bench]
+fn bench_solve100(b: &mut test::Bencher) {
+    bench_solve_n(100, b);
+}
+
+#[bench]
+fn bench_solve1000(b: &mut test::Bencher) {
+    bench_solve_n(1000, b);
 }
