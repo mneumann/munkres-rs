@@ -11,35 +11,40 @@
 
 
 // TODO:
-//    * Use bitarrays for Coverage.
 //    * Implement SquareMatrix. Get rid of nalgebra.
 //    * Reuse path Vec in step5
 //    * Cleanup
 
 extern crate nalgebra as na;
+extern crate bit_vec;
 
 use na::{DMat, BaseNum};
 use std::ops::{Neg, Sub};
 use std::num::Zero;
 use std::cmp;
 use square_matrix::SquareMatrix;
+use bit_vec::BitVec;
 
 mod square_matrix;
 
 #[derive(Debug)]
 struct Coverage {
-    n: usize,
-    rows: Vec<bool>,
-    cols: Vec<bool>,
+    rows: BitVec,
+    cols: BitVec,
 }
 
 impl Coverage {
-    fn n(&self) -> usize { self.n }
+    // XXX: Is this needed?
+    fn n(&self) -> usize {
+        let n1 = self.rows.len();
+        let n2 = self.cols.len();
+        assert!(n1 == n2);
+        return n1;
+    }
 
     fn new(n: usize) -> Coverage {
-        Coverage {n: n,
-                  rows: (0..n).map(|_| false).collect(),
-                  cols: (0..n).map(|_| false).collect(),}
+        Coverage {rows: BitVec::from_elem(n, false),
+                  cols: BitVec::from_elem(n, false)}
     }
 
     fn is_covered(&self, pos: (usize, usize)) -> bool {
@@ -70,20 +75,20 @@ impl Coverage {
     }
 
     fn cover_col(&mut self, col: usize) {
-        self.cols[col] = true;
+        self.cols.set(col, true);
     }
 
     fn uncover_col(&mut self, col: usize) {
-        self.cols[col] = false;
+        self.cols.set(col, false);
     }
 
     fn cover_row(&mut self, row: usize) {
-        self.rows[row] = true;
+        self.rows.set(row, true);
     }
 
     fn clear(&mut self) {
-       for e in self.rows.iter_mut() { *e = false; }
-       for e in self.cols.iter_mut() { *e = false; }
+       self.rows.clear();
+       self.cols.clear();
     } 
 }
 
