@@ -35,6 +35,11 @@ impl<T> IndexMut<(usize, usize)> for SquareMatrix<T> {
 }
 
 impl<T: Copy> SquareMatrix<T> {
+    pub fn from_fn<F: Fn((usize,usize)) -> T>(n: usize, f: F) -> SquareMatrix<T> {
+        let data = (0..n*n).map(|i| f((i/n, i%n))).collect();
+        SquareMatrix::from_row_vec(n, data)
+    }
+
     pub fn from_row_vec(n: usize, data: Vec<T>) -> SquareMatrix<T> {
         assert!(n > 0); 
         assert!(data.len() == n*n);
