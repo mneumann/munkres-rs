@@ -141,17 +141,15 @@ enum Mark {
 
 #[derive(Debug)]
 struct MarkMatrix {
-    n: usize,
-    marks: DMat<Mark>
+    marks: SquareMatrix<Mark>
 }
 
 impl MarkMatrix {
     fn new(n: usize) -> MarkMatrix {
-        MarkMatrix {n: n,
-                    marks: DMat::from_elem(n, n, Mark::None)}
+        MarkMatrix {marks: SquareMatrix::from_row_vec(n, (0..n*n).map(|_| Mark::None).collect())}
     }
 
-    fn n(&self) -> usize { self.n }
+    fn n(&self) -> usize { self.marks.n() }
 
     fn toggle_star(&mut self, pos: (usize, usize)) {
         if self.is_star(pos) {
@@ -192,7 +190,7 @@ impl MarkMatrix {
     }
 
     fn find_first_star_in_row(&self, row: usize) -> Option<usize> {
-        for col in 0..self.n {
+        for col in 0..self.n() {
             if self.is_star((row, col)) {
                 return Some(col);
             }
@@ -201,7 +199,7 @@ impl MarkMatrix {
     }
 
     fn find_first_prime_in_row(&self, row: usize) -> Option<usize> {
-        for col in 0..self.n {
+        for col in 0..self.n() {
             if self.is_prime((row, col)) {
                 return Some(col);
             }
@@ -210,7 +208,7 @@ impl MarkMatrix {
     }
 
     fn find_first_star_in_col(&self, col: usize) -> Option<usize> {
-        for row in 0..self.n {
+        for row in 0..self.n() {
             if self.is_star((row, col)) {
                 return Some(row);
             }
@@ -219,8 +217,8 @@ impl MarkMatrix {
     }
 
     fn clear_primes(&mut self) {
-        for row in 0..self.n {
-            for col in 0..self.n {
+        for row in 0..self.n() {
+            for col in 0..self.n() {
                 if let Mark::Prime = self.marks[(row, col)] {
                     self.marks[(row, col)] = Mark::None;
                 }
