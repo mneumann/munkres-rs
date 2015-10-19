@@ -19,7 +19,7 @@
 extern crate nalgebra as na;
 
 use na::{DMat, BaseNum};
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Neg, Sub};
 use std::num::Zero;
 use std::cmp;
 use square_matrix::SquareMatrix;
@@ -761,7 +761,7 @@ fn test_1() {
                  200, 400, 250];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let matching = compute(&mut weights);
+    let matching = solve_assignment(&mut weights);
 
     assert_eq!(vec![(0,1), (1,2), (2,0)], matching);
 }
