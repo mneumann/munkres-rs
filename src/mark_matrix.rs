@@ -12,6 +12,8 @@ pub struct MarkMatrix {
     marks: SquareMatrix<Mark>
 }
 
+// XXX: Use two bitmatrices. Each row has a fixed number of u64 integers. Use bit-search
+
 impl MarkMatrix {
     pub fn new(n: usize) -> MarkMatrix {
         MarkMatrix {marks: SquareMatrix::from_row_vec(n, (0..n*n).map(|_| Mark::None).collect())}
