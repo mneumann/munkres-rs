@@ -29,9 +29,6 @@ use square_matrix::SquareMatrix;
 use coverage::Coverage;
 use mark_matrix::MarkMatrix;
 
-#[cfg(test)]
-use mark_matrix::Mark;
-
 pub mod square_matrix;
 mod coverage;
 mod mark_matrix;
@@ -533,15 +530,15 @@ fn test_step4_case2() {
     assert_eq!(false, coverage.is_row_covered(2));
 
     // starring DID CHANGE!
-    assert_eq!(Mark::Star, marks.get((0,0)));
-    assert_eq!(Mark::Prime, marks.get((0,1)));
-    assert_eq!(Mark::None, marks.get((0,2)));
-    assert_eq!(Mark::None, marks.get((1,0)));
-    assert_eq!(Mark::None, marks.get((1,1)));
-    assert_eq!(Mark::Star, marks.get((1,2)));
-    assert_eq!(Mark::Prime, marks.get((2,0)));
-    assert_eq!(Mark::None, marks.get((2,1)));
-    assert_eq!(Mark::None, marks.get((2,2)));
+    assert_eq!(true, marks.is_star((0,0)));
+    assert_eq!(true, marks.is_prime((0,1)));
+    assert_eq!(true, marks.is_none((0,2)));
+    assert_eq!(true, marks.is_none((1,0)));
+    assert_eq!(true, marks.is_none((1,1)));
+    assert_eq!(true, marks.is_star((1,2)));
+    assert_eq!(true, marks.is_prime((2,0)));
+    assert_eq!(true, marks.is_none((2,1)));
+    assert_eq!(true, marks.is_none((2,2)));
 }
 
 #[test]
@@ -574,17 +571,17 @@ fn test_step5() {
     assert_eq!(false, coverage.is_row_covered(2));
 
     // starring DID CHANGE!
-    assert_eq!(Mark::None, marks.get((0,0)));
-    assert_eq!(Mark::Star, marks.get((0,1)));
-    assert_eq!(Mark::None, marks.get((0,2)));
+    assert_eq!(true, marks.is_none((0,0)));
+    assert_eq!(true, marks.is_star((0,1)));
+    assert_eq!(true, marks.is_none((0,2)));
 
-    assert_eq!(Mark::None, marks.get((1,0)));
-    assert_eq!(Mark::None, marks.get((1,1)));
-    assert_eq!(Mark::Star, marks.get((1,2)));
+    assert_eq!(true, marks.is_none((1,0)));
+    assert_eq!(true, marks.is_none((1,1)));
+    assert_eq!(true, marks.is_star((1,2)));
 
-    assert_eq!(Mark::Star, marks.get((2,0)));
-    assert_eq!(Mark::None, marks.get((2,1)));
-    assert_eq!(Mark::None, marks.get((2,2)));
+    assert_eq!(true, marks.is_star((2,0)));
+    assert_eq!(true, marks.is_none((2,1)));
+    assert_eq!(true, marks.is_none((2,2)));
 }
 
 

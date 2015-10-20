@@ -1,7 +1,7 @@
 use ::square_matrix::SquareMatrix;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Mark {
+enum Mark {
    None,
    Star,
    Prime
@@ -27,11 +27,6 @@ impl MarkMatrix {
         }
     }
 
-    #[cfg(test)]
-    pub fn get(&self, pos: (usize, usize)) -> Mark {
-        self.marks[pos]
-    }
-
     pub fn unmark(&mut self, pos: (usize, usize)) {
        self.marks[pos] = Mark::None; 
     }
@@ -54,6 +49,14 @@ impl MarkMatrix {
     pub fn is_prime(&self, pos: (usize, usize)) -> bool {
         match self.marks[pos] {
             Mark::Prime => true,
+            _          => false 
+        }
+    }
+
+    #[cfg(test)]
+    pub fn is_none(&self, pos: (usize, usize)) -> bool {
+        match self.marks[pos] {
+            Mark::None => true,
             _          => false 
         }
     }
