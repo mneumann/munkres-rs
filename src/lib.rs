@@ -602,6 +602,7 @@ fn test_solve() {
 
 #[test]
 fn test_solve_random10() {
+    const N: usize = 10;
     let c = vec![
          612, 643, 717,   2, 946, 534, 242, 235, 376, 839,
          224, 141, 799, 180, 386, 745, 592, 822, 421,  42,
@@ -615,8 +616,22 @@ fn test_solve_random10() {
          771, 455, 950,  25,  22, 576, 969, 122,  86,  74,
     ];
 
-    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(10, c);
-    let _matching = solve_assignment(&mut weights);
+    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c.clone());
+    let matching = solve_assignment(&mut weights);
+
+    assert_eq!(N, matching.len());
+
+    let mut cost = 0;
+    for &(row, col) in &matching[..] {
+       cost += c[row*N + col];
+    }
+
+    assert_eq!(1071, cost);
+
+    let exp = &[(0, 7), (1, 9), (2, 3), (3, 4), (4, 1),
+                (5, 0), (6, 5), (7, 6), (8, 2), (9, 8)];
+
+    assert_eq!(exp, &matching[..]);
 }
 
 #[cfg(test)]
