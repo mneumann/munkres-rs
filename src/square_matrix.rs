@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 #[derive(Debug)]
 pub struct SquareMatrix<T> {
     n: usize,
-    data: Vec<T>
+    data: Box<[T]>
 }
 
 impl<T> Index<(usize, usize)> for SquareMatrix<T> {
@@ -43,11 +43,12 @@ impl<T: Copy> SquareMatrix<T> {
     pub fn from_row_vec(n: usize, data: Vec<T>) -> SquareMatrix<T> {
         assert!(n > 0); 
         assert!(data.len() == n*n);
-        SquareMatrix {n: n, data: data}
+        SquareMatrix {n: n, data: data.into_boxed_slice()}
     }
     #[inline(always)]
     pub fn n(&self) -> usize { self.n }
-    pub fn into_vec(self) -> Vec<T> { self.data }
+
+    pub fn as_slice<'a>(&'a self) -> &'a[T] { &self.data[..] }
 
     #[inline]
     pub fn row_slice(&self, row: usize) -> &[T] {

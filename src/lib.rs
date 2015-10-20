@@ -363,11 +363,11 @@ fn test_step1() {
     let next_step = step1(&mut weights);
     assert_eq!(Step::Step2, next_step);
 
-    let exp = vec![0, 150, 100,
-                   50, 250, 0,
-                   0, 200, 50];
+    let exp = &[0, 150, 100,
+                50, 250, 0,
+                0, 200, 50];
 
-    assert_eq!(exp, weights.c.into_vec());
+    assert_eq!(exp, weights.c.as_slice());
 }
 
 
@@ -498,11 +498,11 @@ fn test_step6() {
 
     assert_eq!(Step::Step4(None), next_step);
 
-    let exp = vec![0, 0, 100,
-                   50, 100, 0,
-                   0, 50, 50];
+    let exp = &[0, 0, 100,
+                50, 100, 0,
+                0, 50, 50];
 
-    assert_eq!(exp, weights.c.into_vec());
+    assert_eq!(exp, weights.c.as_slice());
 }
 
 #[test]
