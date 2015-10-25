@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 #[derive(Debug)]
 pub struct SquareMatrix<T> {
     n: usize,
-    data: Box<[T]>
+    data: Box<[T]>,
 }
 
 impl<T> Index<(usize, usize)> for SquareMatrix<T> {
@@ -35,31 +35,38 @@ impl<T> IndexMut<(usize, usize)> for SquareMatrix<T> {
 }
 
 impl<T: Copy> SquareMatrix<T> {
-    pub fn from_fn<F: Fn((usize,usize)) -> T>(n: usize, f: F) -> SquareMatrix<T> {
-        let data = (0..n*n).map(|i| f((i/n, i%n))).collect();
+    pub fn from_fn<F: Fn((usize, usize)) -> T>(n: usize, f: F) -> SquareMatrix<T> {
+        let data = (0..n * n).map(|i| f((i / n, i % n))).collect();
         SquareMatrix::from_row_vec(n, data)
     }
 
     pub fn from_row_vec(n: usize, data: Vec<T>) -> SquareMatrix<T> {
-        assert!(n > 0); 
-        assert!(data.len() == n*n);
-        SquareMatrix {n: n, data: data.into_boxed_slice()}
+        assert!(n > 0);
+        assert!(data.len() == n * n);
+        SquareMatrix {
+            n: n,
+            data: data.into_boxed_slice(),
+        }
     }
     #[inline(always)]
-    pub fn n(&self) -> usize { self.n }
+    pub fn n(&self) -> usize {
+        self.n
+    }
 
-    pub fn as_slice<'a>(&'a self) -> &'a[T] { &self.data[..] }
+    pub fn as_slice<'a>(&'a self) -> &'a [T] {
+        &self.data[..]
+    }
 
     #[inline]
     pub fn row_slice(&self, row: usize) -> &[T] {
-        &self.data[row*self.n .. (row+1)*self.n]
+        &self.data[row * self.n..(row + 1) * self.n]
     }
 
     #[inline]
     pub fn row_slice_mut(&mut self, row: usize) -> &mut [T] {
-        &mut self.data[row*self.n .. (row+1)*self.n]
+        &mut self.data[row * self.n..(row + 1) * self.n]
     }
- 
+
     #[inline]
     pub fn map_row<F: Fn(T) -> T>(&mut self, row: usize, f: F) {
         let n = self.n;

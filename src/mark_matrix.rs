@@ -1,25 +1,30 @@
-use ::square_matrix::SquareMatrix;
+use square_matrix::SquareMatrix;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Mark {
-   None,
-   Star,
-   Prime
+    None,
+    Star,
+    Prime,
 }
 
 #[derive(Debug)]
 pub struct MarkMatrix {
-    marks: SquareMatrix<Mark>
+    marks: SquareMatrix<Mark>,
 }
 
-// XXX: Use two bitmatrices. Each row has a fixed number of u64 integers. Use bit-search
+// XXX: Use two bitmatrices. Each row has a fixed number of u64 integers. Use
+// bit-search
 
 impl MarkMatrix {
     pub fn new(n: usize) -> MarkMatrix {
-        MarkMatrix {marks: SquareMatrix::from_row_vec(n, (0..n*n).map(|_| Mark::None).collect())}
+        MarkMatrix {
+            marks: SquareMatrix::from_row_vec(n, (0..n * n).map(|_| Mark::None).collect()),
+        }
     }
 
-    pub fn n(&self) -> usize { self.marks.n() }
+    pub fn n(&self) -> usize {
+        self.marks.n()
+    }
 
     pub fn toggle_star(&mut self, pos: (usize, usize)) {
         if self.is_star(pos) {
@@ -30,28 +35,28 @@ impl MarkMatrix {
     }
 
     pub fn unmark(&mut self, pos: (usize, usize)) {
-       self.marks[pos] = Mark::None; 
+        self.marks[pos] = Mark::None;
     }
 
     pub fn star(&mut self, pos: (usize, usize)) {
-       self.marks[pos] = Mark::Star; 
+        self.marks[pos] = Mark::Star;
     }
 
     pub fn prime(&mut self, pos: (usize, usize)) {
-       self.marks[pos] = Mark::Prime; 
+        self.marks[pos] = Mark::Prime;
     }
 
     pub fn is_star(&self, pos: (usize, usize)) -> bool {
         match self.marks[pos] {
             Mark::Star => true,
-            _          => false 
+            _ => false,
         }
     }
 
     pub fn is_prime(&self, pos: (usize, usize)) -> bool {
         match self.marks[pos] {
             Mark::Prime => true,
-            _          => false 
+            _ => false,
         }
     }
 
@@ -59,7 +64,7 @@ impl MarkMatrix {
     pub fn is_none(&self, pos: (usize, usize)) -> bool {
         match self.marks[pos] {
             Mark::None => true,
-            _          => false 
+            _ => false,
         }
     }
 

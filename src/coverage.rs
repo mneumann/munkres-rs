@@ -1,4 +1,4 @@
-use ::bit_vec::BitVec;
+use bit_vec::BitVec;
 
 #[derive(Debug)]
 pub struct Coverage {
@@ -16,8 +16,10 @@ impl Coverage {
     }
 
     pub fn new(n: usize) -> Coverage {
-        Coverage {rows: BitVec::from_elem(n, false),
-                  cols: BitVec::from_elem(n, false)}
+        Coverage {
+            rows: BitVec::from_elem(n, false),
+            cols: BitVec::from_elem(n, false),
+        }
     }
 
     #[inline]
@@ -56,7 +58,7 @@ impl Coverage {
     }
 
     pub fn clear(&mut self) {
-       self.rows.clear();
-       self.cols.clear();
+        self.rows.clear();
+        self.cols.clear();
     }
 }
