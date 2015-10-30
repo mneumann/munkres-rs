@@ -24,7 +24,7 @@ extern crate test;
 
 use std::ops::{Add, Sub};
 use std::num::Zero;
-use std::cmp;
+use std::cmp::Ordering;
 use square_matrix::SquareMatrix;
 use coverage::Coverage;
 use mark_matrix::MarkMatrix;
@@ -33,10 +33,10 @@ pub mod square_matrix;
 mod coverage;
 mod mark_matrix;
 
-pub trait WeightNum: Ord + Eq + Copy + Sub<Output=Self> + Add<Output=Self> + Zero {}
+pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> + Zero { }
 
 impl<T> WeightNum for T
-where T: Ord + Eq + Copy + Sub<Output=T> + Add<Output=T> + Zero { }
+where T: PartialOrd + Copy + Sub<Output=T> + Add<Output=T> + Zero { }
 
 #[derive(Debug)]
 pub struct WeightMatrix<T: WeightNum> {
@@ -61,7 +61,7 @@ impl<T: WeightNum> WeightMatrix<T> {
 
     #[inline(always)]
     fn is_element_zero(&self, pos: (usize, usize)) -> bool {
-        self.c[pos] == T::zero()
+        self.c[pos].partial_cmp(&T::zero()) == Some(Ordering::Equal)
     }
 
     /// Return the minimum element of row `row`.
@@ -69,7 +69,9 @@ impl<T: WeightNum> WeightMatrix<T> {
         let row_slice = self.c.row_slice(row);
         let mut min = row_slice[0];
         for &val in &row_slice[1..] {
-            min = cmp::min(min, val);
+            if val < min {
+                min = val;
+            }
         }
         min
     }
@@ -122,7 +124,13 @@ impl<T: WeightNum> WeightMatrix<T> {
                 let elm = self.c[(row, col)];
                 min = Some(match min {
                     None => elm,
-                    Some(m) => cmp::min(m, elm),
+                    Some(m) => {
+                        if m < elm {
+                            m
+                        } else {
+                            elm
+                        }
+                    }
                 });
             }
         }
