@@ -49,6 +49,11 @@ impl<T: WeightNum> WeightMatrix<T> {
         WeightMatrix { c: SquareMatrix::from_row_vec(n, data) }
     }
 
+    pub fn from_fn<F: Fn((usize, usize)) -> T>(n: usize, f: F) -> WeightMatrix<T> {
+        assert!(n > 0);
+        WeightMatrix { c: SquareMatrix::from_fn(n, f) }
+    }
+
     #[inline(always)]
     fn n(&self) -> usize {
         self.c.n()
