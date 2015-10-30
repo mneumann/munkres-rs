@@ -1,5 +1,5 @@
+#![cfg_attr(test, feature(test))]
 #![feature(zero_one)]
-#![feature(test)]
 
 /// Kuhn-Munkres Algorithm (also called Hungarian algorithm) for solving the
 /// Assignment Problem.
