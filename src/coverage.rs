@@ -55,21 +55,6 @@ impl Coverage {
                 continue;
             }
 
-            /*
-            for (i, &b) in self.cols.as_slice().iter().enumerate() {
-                // turn all 0th into 1th. we then look for all 1th.
-                let mut col = i*32;
-                let mut bits = !b;
-                while bits != 0 && col < n {
-                    if (bits & 1) == 1 {
-                        f((row, col));
-                    }
-                    bits = bits >> 1;
-                    col += 1;
-                }
-            }
-            */
-
             for col in 0..n {
                 if self.is_col_covered(col) {
                     continue;
@@ -80,7 +65,29 @@ impl Coverage {
         }
     }
 
+    #[inline]
+    /// iterates over all uncovered (row, col) pairs in row, col order, and set covered if f returns true.
+    pub fn iter_uncovered_row_col_and_cover<F>(&mut self, mut f: F)
+        where F: FnMut((usize, usize)) -> bool {
+        let n = self.n();
 
+        for row in 0..n {
+            if self.is_row_covered(row) {
+                continue;
+            }
+
+            for col in 0..n {
+                if self.is_col_covered(col) {
+                    continue;
+                }
+
+                let pos = (row, col);
+                if f(pos) {
+                    self.cover(pos);
+                }
+            }
+        }
+    }
 
     #[inline]
     pub fn is_row_covered(&self, row: usize) -> bool {

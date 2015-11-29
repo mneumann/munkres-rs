@@ -155,20 +155,14 @@ fn step2<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Co
     assert!(marks.n() == n);
     assert!(cov.n() == n);
 
-    for row in 0..n {
-        if cov.is_row_covered(row) {
-            continue;
+    cov.iter_uncovered_row_col_and_cover(|pos| {
+        if c.is_element_zero(pos) {
+            marks.star(pos);
+            true
+        } else {
+            false
         }
-        for col in 0..n {
-            if cov.is_col_covered(col) {
-                continue;
-            }
-            if c.is_element_zero((row, col)) {
-                marks.star((row, col));
-                cov.cover((row, col));
-            }
-        }
-    }
+    });
 
     // clear covers
     cov.clear();
