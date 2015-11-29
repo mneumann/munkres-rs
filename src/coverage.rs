@@ -8,7 +8,9 @@ pub struct Coverage {
 }
 
 impl Coverage {
-    pub fn n(&self) -> usize { self.n }
+    pub fn n(&self) -> usize {
+        self.n
+    }
 
     pub fn new(n: usize) -> Coverage {
         Coverage {
@@ -21,7 +23,8 @@ impl Coverage {
     #[inline]
     /// find a single uncovered (row, col) pair. Iterates in col, row order.
     pub fn find_uncovered_col_row<F>(&self, mut f: F) -> Option<(usize, usize)>
-        where F: FnMut((usize, usize)) -> bool {
+        where F: FnMut((usize, usize)) -> bool
+    {
 
         let n = self.n();
 
@@ -47,7 +50,8 @@ impl Coverage {
     #[inline]
     /// iterates over all uncovered (row, col) pairs in row, col order
     pub fn iter_uncovered_row_col<F>(&self, mut f: F)
-        where F: FnMut((usize, usize)) {
+        where F: FnMut((usize, usize))
+    {
         let n = self.n();
 
         for row in 0..n {
@@ -68,7 +72,8 @@ impl Coverage {
     #[inline]
     /// iterates over all uncovered (row, col) pairs in row, col order, and set covered if f returns true.
     pub fn iter_uncovered_row_col_and_cover<F>(&mut self, mut f: F)
-        where F: FnMut((usize, usize)) -> bool {
+        where F: FnMut((usize, usize)) -> bool
+    {
         let n = self.n();
 
         for row in 0..n {

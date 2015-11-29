@@ -30,7 +30,8 @@ impl<T: WeightNum> WeightMatrix<T> {
         self.c[pos].partial_cmp(&T::zero()) == Some(Ordering::Equal)
     }
 
-    // for each row, subtracts the minimum of that row from each other value in the row.
+    // for each row, subtracts the minimum of that row from each other value in the
+    // row.
     pub fn sub_min_of_each_row(&mut self) {
         for row in 0..self.n() {
             let min = self.min_of_row(row);
