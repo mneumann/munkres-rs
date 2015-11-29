@@ -38,6 +38,16 @@ pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> + Z
 impl<T> WeightNum for T
 where T: PartialOrd + Copy + Sub<Output=T> + Add<Output=T> + Zero { }
 
+pub trait Weights<T: WeightNum> {
+    fn n(&self) -> usize;
+    fn element_at(&self, pos: (usize, usize)) -> T;
+    fn is_element_zero(&self, pos: (usize, usize)) -> bool;
+
+    fn sub_min_of_each_row(&mut self);
+    fn add_row(&mut self, row: usize, val: T);
+    fn sub_col(&mut self, col: usize, val: T);
+}
+
 #[derive(Debug, Eq, PartialEq)]
 enum Step {
     Step1,
@@ -51,7 +61,10 @@ enum Step {
 
 /// For each row of the matrix, find the smallest element and
 /// subtract it from every element in its row. Go to Step 2.
-fn step1<T: WeightNum>(c: &mut WeightMatrix<T>) -> Step {
+fn step1<T, W>(c: &mut W) -> Step
+    where T: WeightNum,
+          W: Weights<T>
+{
     c.sub_min_of_each_row();
     return Step::Step2;
 }
@@ -59,7 +72,11 @@ fn step1<T: WeightNum>(c: &mut WeightMatrix<T>) -> Step {
 /// Find a zero (Z) in the resulting matrix. If there is no starred
 /// zero in its row or column, star Z. Repeat for each element in the
 /// matrix. Go to Step 3.
-fn step2<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step {
+fn step2<T, W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
+    where T: WeightNum,
+          W: Weights<T>
+{
+
     let n = c.n();
 
     assert!(marks.n() == n);
@@ -83,7 +100,11 @@ fn step2<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Co
 /// Cover each column containing a starred zero. If K columns are
 /// covered, the starred zeros describe a complete set of unique
 /// assignments. In this case, Go to DONE, otherwise, Go to Step 4.
-fn step3<T: WeightNum>(c: &WeightMatrix<T>, marks: &MarkMatrix, cov: &mut Coverage) -> Step {
+fn step3<T, W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step
+    where T: WeightNum,
+          W: Weights<T>
+{
+
     let n = c.n();
 
     assert!(marks.n() == n);
@@ -91,14 +112,10 @@ fn step3<T: WeightNum>(c: &WeightMatrix<T>, marks: &MarkMatrix, cov: &mut Covera
 
     let mut count: usize = 0;
 
-    for row in 0..n {
-        for col in 0..n {
-            if marks.is_star((row, col)) {
-                cov.cover_col(col);
-                count += 1;
-            }
-        }
-    }
+    marks.each_star(|(_, col)| {
+        cov.cover_col(col);
+        count += 1;
+    });
 
     if count >= n {
         Step::Done
@@ -112,14 +129,20 @@ fn step3<T: WeightNum>(c: &WeightMatrix<T>, marks: &MarkMatrix, cov: &mut Covera
 /// cover this row and uncover the column containing the starred
 /// zero. Continue in this manner until there are no uncovered zeros
 /// left. Save the smallest uncovered value and Go to Step 6.
-fn step4<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step {
+fn step4<T, W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
+    where T: WeightNum,
+          W: Weights<T>
+{
+
     let n = c.n();
 
     assert!(marks.n() == n);
     assert!(cov.n() == n);
 
     loop {
-        match c.find_uncovered_zero(cov) {
+
+        // find uncovered zero element
+        match cov.find_uncovered_col_row(|pos| c.is_element_zero(pos)) {
             None => {
                 return Step::Step6;
             }
@@ -149,15 +172,10 @@ fn step4<T: WeightNum>(c: &WeightMatrix<T>, marks: &mut MarkMatrix, cov: &mut Co
 /// that has no starred zero in its column. Unstar each starred zero
 /// of the series, star each primed zero of the series, erase all
 /// primes and uncover every line in the matrix. Return to Step 3
-fn step5<T: WeightNum>(c: &WeightMatrix<T>,
-                       marks: &mut MarkMatrix,
-                       cov: &mut Coverage,
-                       z0: (usize, usize))
-                       -> Step {
-    let n = c.n();
+fn step5(marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize)) -> Step {
+    let n = cov.n();
 
     assert!(marks.n() == n);
-    assert!(cov.n() == n);
 
     let mut path: Vec<(usize, usize)> = Vec::new();
 
@@ -198,11 +216,31 @@ fn step5<T: WeightNum>(c: &WeightMatrix<T>,
 /// row, and subtract it from every element of each uncovered column.
 /// Return to Step 4 without altering any stars, primes, or covered
 /// lines.
-fn step6<T: WeightNum>(c: &mut WeightMatrix<T>, cov: &Coverage) -> Step {
+fn step6<T, W>(c: &mut W, cov: &Coverage) -> Step
+    where T: WeightNum,
+          W: Weights<T>
+{
+
     let n = c.n();
     assert!(cov.n() == n);
 
-    let minval = c.find_uncovered_min(cov).unwrap();
+    // Find the smallest uncovered value in the matrix
+    let mut min = None;
+    cov.iter_uncovered_row_col(|pos| {
+        let elm = c.element_at(pos);
+        min = Some(match min {
+            None => elm,
+            Some(m) => {
+                if m < elm {
+                    m
+                } else {
+                    elm
+                }
+            }
+        });
+    });
+
+    let minval = min.unwrap();
     for row in 0..n {
         if cov.is_row_covered(row) {
             c.add_row(row, minval);
@@ -217,7 +255,10 @@ fn step6<T: WeightNum>(c: &mut WeightMatrix<T>, cov: &Coverage) -> Step {
     return Step::Step4(None);
 }
 
-pub fn solve_assignment<T: WeightNum>(weights: &mut WeightMatrix<T>) -> Vec<(usize, usize)> {
+pub fn solve_assignment<T, W>(weights: &mut W) -> Vec<(usize, usize)>
+    where T: WeightNum,
+          W: Weights<T>
+{
     let n = weights.n();
 
     let mut marks = MarkMatrix::new(n);
@@ -239,7 +280,7 @@ pub fn solve_assignment<T: WeightNum>(weights: &mut WeightMatrix<T>) -> Vec<(usi
                 step = step4(weights, &mut marks, &mut coverage);
             }
             Step::Step5(z0_r, z0_c) => {
-                step = step5(weights, &mut marks, &mut coverage, (z0_r, z0_c));
+                step = step5(&mut marks, &mut coverage, (z0_r, z0_c));
             }
             Step::Step6 => {
                 step = step6(weights, &coverage);
@@ -456,7 +497,7 @@ fn test_step5() {
     coverage.cover_col(2);
     coverage.cover_row(0);
 
-    let next_step = step5(&weights, &mut marks, &mut coverage, (2, 0));
+    let next_step = step5(&mut marks, &mut coverage, (2, 0));
     assert_eq!(Step::Step3, next_step);
 
     // coverage DID CHANGE!

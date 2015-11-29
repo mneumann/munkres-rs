@@ -66,6 +66,22 @@ impl MarkMatrix {
         }
     }
 
+    #[inline]
+    pub fn each_star<F>(&self, mut f: F)
+        where F: FnMut((usize, usize))
+    {
+        let n = self.n();
+
+        for row in 0..n {
+            for col in 0..n {
+                let pos = (row, col);
+                if self.is_star(pos) {
+                    f(pos);
+                }
+            }
+        }
+    }
+
     pub fn find_first_star_in_row(&self, row: usize) -> Option<usize> {
         for col in 0..self.n() {
             if self.is_star((row, col)) {
