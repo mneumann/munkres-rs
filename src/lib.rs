@@ -103,47 +103,26 @@ impl<T: WeightNum> WeightMatrix<T> {
     /// Find the first uncovered element with value 0 `find_a_zero`
     /// TODO: Move into Coverage as iter_uncovered()
     fn find_uncovered_zero(&self, cov: &Coverage) -> Option<(usize, usize)> {
-        let n = self.n();
-
-        for col in 0..n {
-            if cov.is_col_covered(col) {
-                continue;
-            }
-            for row in 0..n {
-                if !cov.is_row_covered(row) && self.is_element_zero((row, col)) {
-                    return Some((row, col));
-                }
-            }
-        }
-
-        return None;
+        cov.find_uncovered_col_row(|pos| self.is_element_zero(pos))
     }
 
     /// Find the smallest uncovered value in the matrix
     fn find_uncovered_min(&self, cov: &Coverage) -> Option<T> {
         let mut min = None;
-        let n = self.n();
-        for row in 0..n {
-            if cov.is_row_covered(row) {
-                continue;
-            }
-            for col in 0..n {
-                if cov.is_col_covered(col) {
-                    continue;
-                }
-                let elm = self.c[(row, col)];
-                min = Some(match min {
-                    None => elm,
-                    Some(m) => {
-                        if m < elm {
-                            m
-                        } else {
-                            elm
-                        }
+        cov.iter_uncovered_row_col(|pos| {
+            let elm = self.c[pos];
+            min = Some(match min {
+                None => elm,
+                Some(m) => {
+                    if m < elm {
+                        m
+                    } else {
+                        elm
                     }
-                });
-            }
-        }
+                }
+            });
+        });
+
         return min;
     }
 }

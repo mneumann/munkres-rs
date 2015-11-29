@@ -19,6 +19,54 @@ impl Coverage {
     }
 
     #[inline]
+    /// find a single uncovered (row, col) pair. Iterates in col, row order.
+    pub fn find_uncovered_col_row<F>(&self, mut f: F) -> Option<(usize, usize)>
+        where F: FnMut((usize, usize)) -> bool {
+
+        let n = self.n();
+
+        for col in 0..n {
+            if self.is_col_covered(col) {
+                continue;
+            }
+            for row in 0..n {
+                if self.is_row_covered(row) {
+                    continue;
+                }
+
+                let pos = (row, col);
+                if f(pos) {
+                    return Some(pos);
+                }
+            }
+        }
+
+        return None;
+    }
+
+    #[inline]
+    /// iterates over all uncovered (row, col) pairs in row, col order
+    pub fn iter_uncovered_row_col<F>(&self, mut f: F)
+        where F: FnMut((usize, usize)) {
+        let n = self.n();
+
+        for row in 0..n {
+            if self.is_row_covered(row) {
+                continue;
+            }
+            for col in 0..n {
+                if self.is_col_covered(col) {
+                    continue;
+                }
+
+                f((row, col));
+            }
+        }
+    }
+
+
+
+    #[inline]
     pub fn is_row_covered(&self, row: usize) -> bool {
         self.rows.contains(row)
     }
