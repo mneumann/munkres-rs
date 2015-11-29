@@ -8,4 +8,4 @@ description = "Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment
 keywords = ["algorithm"]
 
 [dependencies]
-bit-vec = "*"
+fixedbitset = "0.1"

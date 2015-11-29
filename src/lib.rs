@@ -17,7 +17,7 @@
 //    * More test cases
 //    * Non-square matrices
 
-extern crate bit_vec;
+extern crate fixedbitset;
 
 #[cfg(test)]
 extern crate test;

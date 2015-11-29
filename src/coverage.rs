@@ -1,10 +1,10 @@
-use bit_vec::BitVec;
+use fixedbitset::FixedBitSet;
 
 #[derive(Debug)]
 pub struct Coverage {
     n: usize,
-    rows: BitVec,
-    cols: BitVec,
+    rows: FixedBitSet,
+    cols: FixedBitSet,
 }
 
 impl Coverage {
@@ -13,19 +13,19 @@ impl Coverage {
     pub fn new(n: usize) -> Coverage {
         Coverage {
             n: n,
-            rows: BitVec::from_elem(n, false),
-            cols: BitVec::from_elem(n, false),
+            rows: FixedBitSet::with_capacity(n),
+            cols: FixedBitSet::with_capacity(n),
         }
     }
 
     #[inline]
     pub fn is_row_covered(&self, row: usize) -> bool {
-        self.rows[row]
+        self.rows.contains(row)
     }
 
     #[inline]
     pub fn is_col_covered(&self, col: usize) -> bool {
-        self.cols[col]
+        self.cols.contains(col)
     }
 
     #[inline]
