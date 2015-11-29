@@ -2,21 +2,17 @@ use bit_vec::BitVec;
 
 #[derive(Debug)]
 pub struct Coverage {
+    n: usize,
     rows: BitVec,
     cols: BitVec,
 }
 
 impl Coverage {
-    // XXX: Is this needed?
-    pub fn n(&self) -> usize {
-        let n1 = self.rows.len();
-        let n2 = self.cols.len();
-        assert!(n1 == n2);
-        return n1;
-    }
+    pub fn n(&self) -> usize { self.n }
 
     pub fn new(n: usize) -> Coverage {
         Coverage {
+            n: n,
             rows: BitVec::from_elem(n, false),
             cols: BitVec::from_elem(n, false),
         }

@@ -39,6 +39,7 @@ impl<T> WeightNum for T
 where T: PartialOrd + Copy + Sub<Output=T> + Add<Output=T> + Zero { }
 
 #[derive(Debug)]
+// TODO: A WeightMatrix trait
 pub struct WeightMatrix<T: WeightNum> {
     c: SquareMatrix<T>,
 }
@@ -59,9 +60,17 @@ impl<T: WeightNum> WeightMatrix<T> {
         self.c.n()
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_element_zero(&self, pos: (usize, usize)) -> bool {
         self.c[pos].partial_cmp(&T::zero()) == Some(Ordering::Equal)
+    }
+
+    // for each row, subtracts the minimum of that row from each other value in the row.
+    pub fn sub_min_of_each_row(&mut self) {
+        for row in 0..self.n() {
+            let min = self.min_of_row(row);
+            self.sub_row(row, min);
+        }
     }
 
     /// Return the minimum element of row `row`.
@@ -92,6 +101,7 @@ impl<T: WeightNum> WeightMatrix<T> {
     }
 
     /// Find the first uncovered element with value 0 `find_a_zero`
+    /// TODO: Move into Coverage as iter_uncovered()
     fn find_uncovered_zero(&self, cov: &Coverage) -> Option<(usize, usize)> {
         let n = self.n();
 
@@ -153,16 +163,9 @@ enum Step {
 /// For each row of the matrix, find the smallest element and
 /// subtract it from every element in its row. Go to Step 2.
 fn step1<T: WeightNum>(c: &mut WeightMatrix<T>) -> Step {
-    let n = c.n();
-
-    for row in 0..n {
-        let min = c.min_of_row(row);
-        c.sub_row(row, min);
-    }
-
+    c.sub_min_of_each_row();
     return Step::Step2;
 }
-
 
 /// Find a zero (Z) in the resulting matrix. If there is no starred
 /// zero in its row or column, star Z. Repeat for each element in the
