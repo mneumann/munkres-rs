@@ -1,6 +1,7 @@
 use square_matrix::SquareMatrix;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[repr(u8)]
 enum Mark {
     None,
     Star,
@@ -11,9 +12,6 @@ enum Mark {
 pub struct MarkMatrix {
     marks: SquareMatrix<Mark>,
 }
-
-// XXX: Use two bitmatrices. Each row has a fixed number of u64 integers. Use
-// bit-search
 
 impl MarkMatrix {
     pub fn new(n: usize) -> MarkMatrix {
