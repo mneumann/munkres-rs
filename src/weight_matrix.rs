@@ -7,7 +7,8 @@ pub struct WeightMatrix<T: WeightNum> {
     c: SquareMatrix<T>,
 }
 
-impl<T: WeightNum> Weights<T> for WeightMatrix<T> {
+impl<T: WeightNum> Weights for WeightMatrix<T> {
+    type T = T;
     #[inline(always)]
     fn n(&self) -> usize {
         self.c.n()
