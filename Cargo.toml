@@ -1,11 +1,11 @@
 [package]
 name = "munkres"
-version = "0.0.2"
+version = "0.1.0"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/mneumann/munkres-rs"
 description = "Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem"
-keywords = ["algorithm"]
+keywords = ["algorithm", "optimization"]
 
 [dependencies]
 fixedbitset = "0.1"
