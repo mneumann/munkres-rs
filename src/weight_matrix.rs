@@ -9,6 +9,7 @@ pub struct WeightMatrix<T: WeightNum> {
 
 impl<T: WeightNum> Weights for WeightMatrix<T> {
     type T = T;
+
     #[inline(always)]
     fn n(&self) -> usize {
         self.c.n()
@@ -75,4 +76,19 @@ impl<T: WeightNum> WeightMatrix<T> {
     pub fn as_slice(&self) -> &[T] {
         self.c.as_slice()
     }
+}
+
+#[test]
+fn test_weight_matrix() {
+    assert_eq!(0, WeightMatrix::from_row_vec(1, vec![0]).min_of_row(0));
+    assert_eq!(1, WeightMatrix::from_row_vec(1, vec![1]).min_of_row(0));
+    assert_eq!(1, WeightMatrix::from_row_vec(2, vec![5, 1, 0, 0]).min_of_row(0));
+
+    let mut mat = WeightMatrix::from_row_vec(2, vec![0, 1, 2, 3]);
+    mat.sub_row(1, 1);
+    assert_eq!(&[0, 1, 1, 2], mat.as_slice());
+
+    let mut mat = WeightMatrix::from_row_vec(2, vec![5, 3, 2, 3]);
+    mat.sub_min_of_each_row();
+    assert_eq!(&[2, 0, 0, 1], mat.as_slice());
 }
