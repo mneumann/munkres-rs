@@ -27,16 +27,32 @@ use std::num::Zero;
 use coverage::Coverage;
 use mark_matrix::MarkMatrix;
 pub use weight_matrix::WeightMatrix;
+use std::cmp::Ordering;
 
 pub mod square_matrix;
 mod coverage;
 mod mark_matrix;
 pub mod weight_matrix;
 
-pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> + Zero { }
+pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> + Zero {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        self.partial_cmp(&Self::zero()) == Some(Ordering::Equal)
+    }
+}
 
-impl<T> WeightNum for T
-where T: PartialOrd + Copy + Sub<Output=T> + Add<Output=T> + Zero { }
+impl WeightNum for usize { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for isize { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for u64 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for i64 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for u32 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for i32 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for u16 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for i16 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for u8 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for i8 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for f64 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0.0 } }
+impl WeightNum for f32 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0.0 } }
 
 pub trait Weights {
     type T: WeightNum;

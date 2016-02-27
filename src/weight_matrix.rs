@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use super::{WeightNum, Weights};
 use super::square_matrix::SquareMatrix;
 
@@ -22,7 +21,7 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
 
     #[inline]
     fn is_element_zero(&self, pos: (usize, usize)) -> bool {
-        self.c[pos].partial_cmp(&T::zero()) == Some(Ordering::Equal)
+        self.c[pos].is_zero()
     }
 
     // for each row, subtracts the minimum of that row from each other value in the
