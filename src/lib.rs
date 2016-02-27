@@ -724,13 +724,3 @@ fn bench_solve_n(n: usize, b: &mut test::Bencher) {
 fn bench_solve_100(b: &mut test::Bencher) {
     bench_solve_n(100, b);
 }
-
-#[bench]
-fn bench_solve_1000(b: &mut test::Bencher) {
-    bench_solve_n(1000, b);
-}
-
-#[bench]
-fn bench_solve_2000(b: &mut test::Bencher) {
-    bench_solve_n(2000, b);
-}
