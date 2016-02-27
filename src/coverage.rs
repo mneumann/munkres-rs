@@ -81,7 +81,7 @@ impl Coverage {
                 continue;
             }
 
-            for col in 0..n {
+            'col: for col in 0..n {
                 if self.is_col_covered(col) {
                     continue;
                 }
@@ -89,6 +89,8 @@ impl Coverage {
                 let pos = (row, col);
                 if f(pos) {
                     self.cover(pos);
+                    // the complete row is covered! break the loop!
+                    break 'col;
                 }
             }
         }
