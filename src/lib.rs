@@ -12,7 +12,6 @@
 
 
 // TODO:
-//    * Reuse path Vec in step5
 //    * Cleanup
 //    * More test cases
 //    * Non-square matrices
@@ -187,15 +186,15 @@ fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
 /// that has no starred zero in its column. Unstar each starred zero
 /// of the series, star each primed zero of the series, erase all
 /// primes and uncover every line in the matrix. Return to Step 3
-fn step5(marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize)) -> Step {
+fn step5(marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize), path: &mut Vec<(usize, usize)>) -> Step {
     let n = cov.n();
 
     assert!(marks.n() == n);
 
-    let mut path: Vec<(usize, usize)> = Vec::new();
+    path.clear();
+    path.push(z0);
 
     let mut prev_col = z0.1;
-    path.push(z0);
 
     loop {
         match marks.find_first_star_in_col(prev_col) {
@@ -217,7 +216,7 @@ fn step5(marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize)) -> Step
     }
 
     // convert_path
-    for pos in path {
+    for &pos in path.iter() {
         marks.toggle_star(pos);
     }
 
@@ -278,6 +277,7 @@ pub fn solve_assignment<W>(weights: &mut W) -> Vec<(usize, usize)>
 
     let mut marks = MarkMatrix::new(n);
     let mut coverage = Coverage::new(n);
+    let mut path = Vec::with_capacity(n);
 
     let mut step = Step::Step1;
     loop {
@@ -295,7 +295,7 @@ pub fn solve_assignment<W>(weights: &mut W) -> Vec<(usize, usize)>
                 step = step4(weights, &mut marks, &mut coverage);
             }
             Step::Step5(z0_r, z0_c) => {
-                step = step5(&mut marks, &mut coverage, (z0_r, z0_c));
+                step = step5(&mut marks, &mut coverage, (z0_r, z0_c), &mut path);
             }
             Step::Step6 => {
                 step = step6(weights, &coverage);
@@ -512,7 +512,8 @@ fn test_step5() {
     coverage.cover_col(2);
     coverage.cover_row(0);
 
-    let next_step = step5(&mut marks, &mut coverage, (2, 0));
+    let mut path = Vec::new();
+    let next_step = step5(&mut marks, &mut coverage, (2, 0), &mut path);
     assert_eq!(Step::Step3, next_step);
 
     // coverage DID CHANGE!
