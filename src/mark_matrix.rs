@@ -32,7 +32,7 @@ impl MarkMatrix {
         }
     }
 
-    pub fn unmark(&mut self, pos: (usize, usize)) {
+    fn unmark(&mut self, pos: (usize, usize)) {
         self.marks[pos] = Mark::None;
     }
 
