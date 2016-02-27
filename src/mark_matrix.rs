@@ -20,6 +20,7 @@ impl MarkMatrix {
         }
     }
 
+    #[inline]
     pub fn n(&self) -> usize {
         self.marks.n()
     }

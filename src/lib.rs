@@ -80,6 +80,7 @@ fn step2<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
 
     assert!(marks.n() == n);
     assert!(cov.n() == n);
+    debug_assert!(cov.is_clear());
 
     cov.iter_uncovered_row_col_and_cover(|pos| {
         if c.is_element_zero(pos) {
@@ -116,6 +117,7 @@ fn step3<W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step
     });
 
     if count >= n {
+        debug_assert!(count == n);
         Step::Done
     } else {
         Step::Step4(Some(count))
@@ -225,13 +227,15 @@ fn step6<W>(c: &mut W, cov: &Coverage) -> Step
     cov.iter_uncovered_row_col(|pos| {
         let elm = c.element_at(pos);
         min = Some(match min {
-            None => elm,
             Some(m) => {
                 if m < elm {
                     m
                 } else {
                     elm
                 }
+            }
+            None => {
+                elm
             }
         });
     });
