@@ -520,12 +520,147 @@ fn test_step5() {
 
 #[test]
 fn test_solve() {
-    let c = vec![250, 400, 350, 400, 600, 350, 200, 400, 250];
+    let c = vec![250, 400, 350, // row 1
+                 400, 600, 350, // row 2
+                 200, 400, 250  // row 3
+                ];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let matching = solve_assignment(&mut weights);
 
     assert_eq!(vec![(0, 1), (1, 2), (2, 0)], matching);
+}
+
+#[test]
+fn test_solve_equal_rows_stepwise() {
+    const N: usize = 2;
+    let c = vec![
+         1, 1,
+         2, 2,
+    ];
+
+    let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c);
+
+    assert_eq!(1, weights.element_at((0, 0)));
+    assert_eq!(1, weights.element_at((0, 1)));
+    assert_eq!(2, weights.element_at((1, 0)));
+    assert_eq!(2, weights.element_at((1, 1)));
+
+    // step 1
+
+    let next_step = step1(&mut weights);
+    assert_eq!(Step::Step2, next_step);
+    assert_eq!(&[0, 0, 0, 0], weights.as_slice());
+
+    // step 2
+
+    let mut marks = MarkMatrix::new(weights.n());
+    let mut coverage = Coverage::new(weights.n());
+    let next_step = step2(&weights, &mut marks, &mut coverage);
+    assert_eq!(Step::Step3, next_step);
+    assert!(coverage.is_clear());
+
+    assert!(marks.is_star((0,0)));
+    assert!(marks.is_star((1,1)));
+    assert!(marks.is_none((0,1)));
+    assert!(marks.is_none((1,0)));
+
+    // step 3
+    let next_step = step3(&weights, &mut marks, &mut coverage);
+    assert_eq!(Step::Done, next_step);
+}
+
+#[test]
+fn test_solve_equal_rows2() {
+    const N: usize = 2;
+    let c = vec![
+         1, 1,
+         2, 2,
+    ];
+
+    let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c.clone());
+    let matching = solve_assignment(&mut weights);
+
+    assert_eq!(N, matching.len());
+
+    let mut cost = 0;
+    for &(row, col) in &matching[..] {
+        cost += c[row * N + col];
+    }
+
+    assert_eq!(3, cost);
+}
+
+#[test]
+fn test_solve_equal_rows5() {
+    const N: usize = 5;
+    let c = vec![
+         0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0,
+         1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1,
+    ];
+
+    let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c.clone());
+    let matching = solve_assignment(&mut weights);
+
+    assert_eq!(N, matching.len());
+
+    let mut cost = 0;
+    for &(row, col) in &matching[..] {
+        cost += c[row * N + col];
+    }
+
+    assert_eq!(2, cost);
+}
+
+#[test]
+fn test_solve_equal_rows5_float() {
+    const N: usize = 5;
+    let c = vec![
+         0.0, 0.0, 0.0, 0.0, 0.0,
+         0.0, 0.0, 0.0, 0.0, 0.0,
+         0.0, 0.0, 0.0, 0.0, 0.0,
+         1.0, 1.0, 1.0, 1.0, 1.0,
+         1.0, 1.0, 1.0, 1.0, 1.0,
+    ];
+
+    let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
+    let matching = solve_assignment(&mut weights);
+
+    assert_eq!(N, matching.len());
+
+    let mut cost = 0.0;
+    for &(row, col) in &matching[..] {
+        cost += c[row * N + col];
+    }
+
+    assert_eq!(2.0, cost);
+}
+
+#[test]
+fn test_solve_equal_rows5_float2() {
+    const N: usize = 5;
+    let c = vec![
+         1.0, 1.0, 1.0, 1.0, 1.0,
+         1.0, 1.0, 1.0, 1.0, 1.0,
+         1.0, 1.0, 1.0, 1.0, 1.0,
+         0.0, 0.0, 0.0, 0.0, 0.0,
+         0.0, 0.0, 0.0, 0.0, 0.0,
+    ];
+
+    let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
+    let matching = solve_assignment(&mut weights);
+
+    assert_eq!(N, matching.len());
+
+    let mut cost = 0.0;
+    for &(row, col) in &matching[..] {
+        cost += c[row * N + col];
+    }
+
+    assert_eq!(3.0, cost);
 }
 
 #[test]
