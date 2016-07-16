@@ -1,5 +1,4 @@
 #![cfg_attr(test, feature(test))]
-#![feature(zero_one)]
 
 /// Kuhn-Munkres Algorithm (also called Hungarian algorithm) for solving the
 /// Assignment Problem.
@@ -22,22 +21,17 @@ extern crate fixedbitset;
 extern crate test;
 
 use std::ops::{Add, Sub};
-use std::num::Zero;
 use coverage::Coverage;
 use mark_matrix::MarkMatrix;
 pub use weight_matrix::WeightMatrix;
-use std::cmp::Ordering;
 
 pub mod square_matrix;
 mod coverage;
 mod mark_matrix;
 pub mod weight_matrix;
 
-pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> + Zero {
-    #[inline(always)]
-    fn is_zero(&self) -> bool {
-        self.partial_cmp(&Self::zero()) == Some(Ordering::Equal)
-    }
+pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> {
+    fn is_zero(&self) -> bool;
 }
 
 impl WeightNum for usize { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
