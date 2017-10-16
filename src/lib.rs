@@ -16,6 +16,7 @@
 //    * Non-square matrices
 
 extern crate fixedbitset;
+extern crate ndarray;
 
 #[cfg(test)]
 extern crate test;
@@ -51,11 +52,15 @@ pub trait Weights {
     type T: WeightNum;
     fn n(&self) -> usize;
     fn element_at(&self, pos: (usize, usize)) -> Self::T;
-    fn is_element_zero(&self, pos: (usize, usize)) -> bool;
 
     fn sub_min_of_each_row(&mut self);
     fn add_row(&mut self, row: usize, val: Self::T);
     fn sub_col(&mut self, col: usize, val: Self::T);
+
+    #[inline]
+    fn is_element_zero(&self, pos: (usize, usize)) -> bool {
+        self.element_at(pos).is_zero()
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
