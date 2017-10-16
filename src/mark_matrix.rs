@@ -1,4 +1,4 @@
-use square_matrix::SquareMatrix;
+use SquareMatrix;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]

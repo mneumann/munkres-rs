@@ -26,7 +26,10 @@ use coverage::Coverage;
 use mark_matrix::MarkMatrix;
 pub use weight_matrix::WeightMatrix;
 
-pub mod square_matrix;
+use ndarray::Array2;
+
+pub type SquareMatrix<T> = Array2<T>;
+
 mod coverage;
 mod mark_matrix;
 pub mod weight_matrix;

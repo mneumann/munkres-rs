@@ -1,5 +1,6 @@
-use super::{WeightNum, Weights};
-use super::square_matrix::SquareMatrix;
+use WeightNum;
+use Weights;
+use SquareMatrix;
 
 #[derive(Debug)]
 pub struct WeightMatrix<T: WeightNum> {
@@ -41,8 +42,7 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
 
 impl<T: WeightNum> WeightMatrix<T> {
     pub fn from_row_vec(n: usize, data: Vec<T>) -> WeightMatrix<T> {
-        assert!(n > 0);
-        WeightMatrix { c: unsafe { SquareMatrix::from_shape_vec_unchecked((n, n), data) } }
+        WeightMatrix { c: SquareMatrix::from_shape_vec((n, n), data).unwrap() }
     }
 
     pub fn from_fn<F: Fn((usize, usize)) -> T>(n: usize, f: F) -> WeightMatrix<T> {
@@ -51,8 +51,8 @@ impl<T: WeightNum> WeightMatrix<T> {
     }
 
     /// Return the minimum element of row `row`.
-    fn min_of_row(&mut self, row: usize) -> T {
-        let row_slice = self.c.row_mut(row);
+    fn min_of_row(&self, row: usize) -> T {
+        let row_slice = self.c.row(row);
         let mut min = row_slice[0];
         for &val in row_slice.iter().skip(1) {
             if val < min {
