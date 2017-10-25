@@ -1,6 +1,6 @@
 # munkres-rs [![Build Status][travis-image]][travis-link]
 
-[travis-image]: https://travis-ci.org/mneumann/munkres-rs.png?branch=master
+[travis-image]: https://travis-ci.org/mneumann/munkres-rs.svg?branch=master
 [travis-link]: https://travis-ci.org/mneumann/munkres-rs
 
 Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem written in Rust.
