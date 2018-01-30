@@ -3,7 +3,8 @@
 [travis-image]: https://travis-ci.org/mneumann/munkres-rs.svg?branch=master
 [travis-link]: https://travis-ci.org/mneumann/munkres-rs
 
-Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem written in Rust.
+Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem
+written in Rust. Time complexity is O(n^3).
 
 This is a modified port from https://github.com/bmc/munkres.
 
