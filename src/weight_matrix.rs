@@ -31,12 +31,33 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
 
     // Add `val` to every element in row `row`.
     fn add_row(&mut self, row: usize, val: T) {
-        self.c.row_mut(row).mapv_inplace(|cur| cur + val);
+        self.c.row_mut(row).mapv_inplace(|cur| {
+            if cur.is_disallowed() {
+                cur
+            } else {
+                cur + val
+            }
+        });
     }
 
     // Subtract `val` from every element in column `col`.
     fn sub_col(&mut self, col: usize, val: T) {
-        self.c.column_mut(col).mapv_inplace(|cur| cur - val);
+        self.c.column_mut(col).mapv_inplace(|cur| {
+            if cur.is_disallowed() {
+                cur
+            } else {
+                cur - val
+            }
+        });
+    }
+
+    fn is_solvable(&self) -> bool {
+        for row in 0..self.n() {
+            if self.c.row(row).iter().all(|c| c.is_disallowed()) {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -55,7 +76,7 @@ impl<T: WeightNum> WeightMatrix<T> {
         let row_slice = self.c.row(row);
         let mut min = row_slice[0];
         for &val in row_slice.iter().skip(1) {
-            if val < min {
+            if !val.is_disallowed() && val < min {
                 min = val;
             }
         }
@@ -64,7 +85,13 @@ impl<T: WeightNum> WeightMatrix<T> {
 
     // Subtract `val` from every element in row `row`.
     fn sub_row(&mut self, row: usize, val: T) {
-        self.c.row_mut(row).mapv_inplace(|cur| cur - val);
+        self.c.row_mut(row).mapv_inplace(|cur| {
+            if cur.is_disallowed() {
+                cur
+            } else {
+                cur - val
+            }
+        });
     }
 
     pub fn as_slice(&self) -> &[T] {

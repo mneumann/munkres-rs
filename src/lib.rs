@@ -21,7 +21,9 @@ extern crate ndarray;
 #[cfg(test)]
 extern crate test;
 
+use std::{f32, f64};
 use std::ops::{Add, Sub};
+
 use coverage::Coverage;
 use mark_matrix::MarkMatrix;
 pub use weight_matrix::WeightMatrix;
@@ -36,6 +38,7 @@ pub mod weight_matrix;
 
 pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> {
     fn is_zero(&self) -> bool;
+    fn is_disallowed(&self) -> bool { false }
 }
 
 impl WeightNum for usize { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
@@ -48,8 +51,28 @@ impl WeightNum for u16 { #[inline(always)] fn is_zero(&self) -> bool { *self == 
 impl WeightNum for i16 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
 impl WeightNum for u8 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
 impl WeightNum for i8 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for f64 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0.0 } }
-impl WeightNum for f32 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0.0 } }
+
+impl WeightNum for f64 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0.0
+    }
+
+    fn is_disallowed(&self) -> bool {
+        *self == f64::INFINITY
+    }
+}
+
+impl WeightNum for f32 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0.0
+    }
+
+    fn is_disallowed(&self) -> bool {
+        *self == f32::INFINITY
+    }
+}
 
 pub trait Weights {
     type T: WeightNum;
@@ -64,6 +87,8 @@ pub trait Weights {
     fn is_element_zero(&self, pos: (usize, usize)) -> bool {
         self.element_at(pos).is_zero()
     }
+
+    fn is_solvable(&self) -> bool;
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -275,6 +300,10 @@ fn step6<W>(c: &mut W, cov: &Coverage) -> Step
 pub fn solve_assignment<W>(weights: &mut W) -> Vec<(usize, usize)>
     where W: Weights
 {
+    if !weights.is_solvable() {
+        panic!("Matrix can not be solved");
+    }
+
     let n = weights.n();
 
     let mut marks = MarkMatrix::new(n);
@@ -717,6 +746,34 @@ fn test_solve_random10() {
     let exp = &[(0, 7), (1, 9), (2, 3), (3, 4), (4, 1), (5, 0), (6, 5), (7, 6), (8, 2), (9, 8)];
 
     assert_eq!(exp, &matching[..]);
+}
+
+#[test]
+fn test_disallowed() {
+    let c = vec![
+        250.0, 400.0, 350.0,
+        400.0, 600.0, f32::INFINITY,
+        200.0, 400.0, 250.0
+    ];
+
+    let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(3, c);
+    let matching = solve_assignment(&mut weights);
+
+    assert_eq!(vec![(0, 1), (1, 0), (2, 2)], matching);
+}
+
+#[test]
+#[should_panic]
+fn test_unsolvable() {
+    const N: usize = 3;
+    let c = vec![
+         1.0, 1.0, 1.0,
+         f32::INFINITY, f32::INFINITY, f32::INFINITY,
+         1.0, 1.0, 1.0,
+    ];
+
+    let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
+    solve_assignment(&mut weights);
 }
 
 #[cfg(test)]
