@@ -8,13 +8,10 @@
 /// This code is derived from a port of the Python version found here:
 /// https://github.com/bmc/munkres/blob/master/munkres.py
 /// which is Copyright (c) 2008 Brian M. Clapper.
-
-
 // TODO:
 //    * Cleanup
 //    * More test cases
 //    * Non-square matrices
-
 extern crate fixedbitset;
 extern crate ndarray;
 
@@ -36,21 +33,73 @@ mod coverage;
 mod mark_matrix;
 pub mod weight_matrix;
 
-pub trait WeightNum: PartialOrd + Copy + Sub<Output=Self> + Add<Output=Self> {
+pub trait WeightNum: PartialOrd + Copy + Sub<Output = Self> + Add<Output = Self> {
     fn is_zero(&self) -> bool;
-    fn is_disallowed(&self) -> bool { false }
+    fn is_disallowed(&self) -> bool {
+        false
+    }
 }
 
-impl WeightNum for usize { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for isize { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for u64 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for i64 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for u32 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for i32 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for u16 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for i16 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for u8 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
-impl WeightNum for i8 { #[inline(always)] fn is_zero(&self) -> bool { *self == 0 } }
+impl WeightNum for usize {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for isize {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for u64 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for i64 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for u32 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for i32 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for u16 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for i16 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for u8 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
+impl WeightNum for i8 {
+    #[inline(always)]
+    fn is_zero(&self) -> bool {
+        *self == 0
+    }
+}
 
 impl WeightNum for f64 {
     #[inline(always)]
@@ -105,7 +154,8 @@ enum Step {
 /// For each row of the matrix, find the smallest element and
 /// subtract it from every element in its row. Go to Step 2.
 fn step1<W>(c: &mut W) -> Step
-    where W: Weights
+where
+    W: Weights,
 {
     c.sub_min_of_each_row();
     return Step::Step2;
@@ -115,9 +165,9 @@ fn step1<W>(c: &mut W) -> Step
 /// zero in its row or column, star Z. Repeat for each element in the
 /// matrix. Go to Step 3.
 fn step2<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
-    where W: Weights
+where
+    W: Weights,
 {
-
     let n = c.n();
 
     assert!(marks.n() == n);
@@ -143,9 +193,9 @@ fn step2<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
 /// covered, the starred zeros describe a complete set of unique
 /// assignments. In this case, Go to DONE, otherwise, Go to Step 4.
 fn step3<W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step
-    where W: Weights
+where
+    W: Weights,
 {
-
     let n = c.n();
 
     assert!(marks.n() == n);
@@ -172,16 +222,15 @@ fn step3<W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step
 /// zero. Continue in this manner until there are no uncovered zeros
 /// left. Save the smallest uncovered value and Go to Step 6.
 fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
-    where W: Weights
+where
+    W: Weights,
 {
-
     let n = c.n();
 
     assert!(marks.n() == n);
     assert!(cov.n() == n);
 
     loop {
-
         // find uncovered zero element
         match cov.find_uncovered_col_row(|pos| c.is_element_zero(pos)) {
             None => {
@@ -202,7 +251,6 @@ fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
             }
         }
     }
-
 }
 
 /// Construct a series of alternating primed and starred zeros as
@@ -213,7 +261,12 @@ fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
 /// that has no starred zero in its column. Unstar each starred zero
 /// of the series, star each primed zero of the series, erase all
 /// primes and uncover every line in the matrix. Return to Step 3
-fn step5(marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize), path: &mut Vec<(usize, usize)>) -> Step {
+fn step5(
+    marks: &mut MarkMatrix,
+    cov: &mut Coverage,
+    z0: (usize, usize),
+    path: &mut Vec<(usize, usize)>,
+) -> Step {
     let n = cov.n();
 
     assert!(marks.n() == n);
@@ -252,15 +305,14 @@ fn step5(marks: &mut MarkMatrix, cov: &mut Coverage, z0: (usize, usize), path: &
     return Step::Step3;
 }
 
-
 /// Add the value found in Step 4 to every element of each covered
 /// row, and subtract it from every element of each uncovered column.
 /// Return to Step 4 without altering any stars, primes, or covered
 /// lines.
 fn step6<W>(c: &mut W, cov: &Coverage) -> Step
-    where W: Weights
+where
+    W: Weights,
 {
-
     let n = c.n();
     assert!(cov.n() == n);
 
@@ -276,9 +328,7 @@ fn step6<W>(c: &mut W, cov: &Coverage) -> Step
                     elm
                 }
             }
-            None => {
-                elm
-            }
+            None => elm,
         });
     });
 
@@ -298,7 +348,8 @@ fn step6<W>(c: &mut W, cov: &Coverage) -> Step
 }
 
 pub fn solve_assignment<W>(weights: &mut W) -> Vec<(usize, usize)>
-    where W: Weights
+where
+    W: Weights,
 {
     if !weights.is_solvable() {
         panic!("Matrix can not be solved");
@@ -313,9 +364,7 @@ pub fn solve_assignment<W>(weights: &mut W) -> Vec<(usize, usize)>
     let mut step = Step::Step1;
     loop {
         match step {
-            Step::Step1 => {
-                step = step1(weights)
-            }
+            Step::Step1 => step = step1(weights),
             Step::Step2 => {
                 step = step2(weights, &mut marks, &mut coverage);
             }
@@ -364,7 +413,6 @@ fn test_step1() {
 
     assert_eq!(exp, weights.as_slice());
 }
-
 
 #[test]
 fn test_step2() {
@@ -569,7 +617,6 @@ fn test_step5() {
     assert_eq!(true, marks.is_none((2, 2)));
 }
 
-
 #[test]
 fn test_solve() {
     let c = vec![250, 400, 350, // row 1
@@ -586,10 +633,7 @@ fn test_solve() {
 #[test]
 fn test_solve_equal_rows_stepwise() {
     const N: usize = 2;
-    let c = vec![
-         1, 1,
-         2, 2,
-    ];
+    let c = vec![1, 1, 2, 2];
 
     let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c);
 
@@ -612,10 +656,10 @@ fn test_solve_equal_rows_stepwise() {
     assert_eq!(Step::Step3, next_step);
     assert!(coverage.is_clear());
 
-    assert!(marks.is_star((0,0)));
-    assert!(marks.is_star((1,1)));
-    assert!(marks.is_none((0,1)));
-    assert!(marks.is_none((1,0)));
+    assert!(marks.is_star((0, 0)));
+    assert!(marks.is_star((1, 1)));
+    assert!(marks.is_none((0, 1)));
+    assert!(marks.is_none((1, 0)));
 
     // step 3
     let next_step = step3(&weights, &mut marks, &mut coverage);
@@ -625,10 +669,7 @@ fn test_solve_equal_rows_stepwise() {
 #[test]
 fn test_solve_equal_rows2() {
     const N: usize = 2;
-    let c = vec![
-         1, 1,
-         2, 2,
-    ];
+    let c = vec![1, 1, 2, 2];
 
     let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c.clone());
     let matching = solve_assignment(&mut weights);
@@ -647,11 +688,7 @@ fn test_solve_equal_rows2() {
 fn test_solve_equal_rows5() {
     const N: usize = 5;
     let c = vec![
-         0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0,
-         1, 1, 1, 1, 1,
-         1, 1, 1, 1, 1,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     ];
 
     let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c.clone());
@@ -671,11 +708,8 @@ fn test_solve_equal_rows5() {
 fn test_solve_equal_rows5_float() {
     const N: usize = 5;
     let c = vec![
-         0.0, 0.0, 0.0, 0.0, 0.0,
-         0.0, 0.0, 0.0, 0.0, 0.0,
-         0.0, 0.0, 0.0, 0.0, 0.0,
-         1.0, 1.0, 1.0, 1.0, 1.0,
-         1.0, 1.0, 1.0, 1.0, 1.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
@@ -695,11 +729,8 @@ fn test_solve_equal_rows5_float() {
 fn test_solve_equal_rows5_float2() {
     const N: usize = 5;
     let c = vec![
-         1.0, 1.0, 1.0, 1.0, 1.0,
-         1.0, 1.0, 1.0, 1.0, 1.0,
-         1.0, 1.0, 1.0, 1.0, 1.0,
-         0.0, 0.0, 0.0, 0.0, 0.0,
-         0.0, 0.0, 0.0, 0.0, 0.0,
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
@@ -719,16 +750,12 @@ fn test_solve_equal_rows5_float2() {
 fn test_solve_random10() {
     const N: usize = 10;
     let c = vec![
-         612, 643, 717,   2, 946, 534, 242, 235, 376, 839,
-         224, 141, 799, 180, 386, 745, 592, 822, 421,  42,
-         241, 369, 831,  67, 258, 549, 615, 529, 458, 524,
-         231, 649, 287, 910,  12, 820,  31,  92, 217, 555,
-         912,  81, 568, 241, 292, 653, 417, 652, 630, 788,
-          32, 822, 788, 166, 122, 690, 304, 568, 449, 214,
-         441, 469, 584, 633, 213, 414, 498, 500, 317, 391,
-         798, 581, 183, 420,  16, 748,  35, 516, 639, 356,
-         351, 921,  67,  33, 592, 775, 780, 335, 464, 788,
-         771, 455, 950,  25,  22, 576, 969, 122,  86,  74,
+        612, 643, 717, 2, 946, 534, 242, 235, 376, 839, 224, 141, 799, 180, 386, 745, 592, 822,
+        421, 42, 241, 369, 831, 67, 258, 549, 615, 529, 458, 524, 231, 649, 287, 910, 12, 820, 31,
+        92, 217, 555, 912, 81, 568, 241, 292, 653, 417, 652, 630, 788, 32, 822, 788, 166, 122, 690,
+        304, 568, 449, 214, 441, 469, 584, 633, 213, 414, 498, 500, 317, 391, 798, 581, 183, 420,
+        16, 748, 35, 516, 639, 356, 351, 921, 67, 33, 592, 775, 780, 335, 464, 788, 771, 455, 950,
+        25, 22, 576, 969, 122, 86, 74,
     ];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c.clone());
@@ -743,7 +770,18 @@ fn test_solve_random10() {
 
     assert_eq!(1071, cost);
 
-    let exp = &[(0, 7), (1, 9), (2, 3), (3, 4), (4, 1), (5, 0), (6, 5), (7, 6), (8, 2), (9, 8)];
+    let exp = &[
+        (0, 7),
+        (1, 9),
+        (2, 3),
+        (3, 4),
+        (4, 1),
+        (5, 0),
+        (6, 5),
+        (7, 6),
+        (8, 2),
+        (9, 8),
+    ];
 
     assert_eq!(exp, &matching[..]);
 }
@@ -751,9 +789,15 @@ fn test_solve_random10() {
 #[test]
 fn test_disallowed() {
     let c = vec![
-        250.0, 400.0, 350.0,
-        400.0, 600.0, f32::INFINITY,
-        200.0, 400.0, 250.0
+        250.0,
+        400.0,
+        350.0,
+        400.0,
+        600.0,
+        f32::INFINITY,
+        200.0,
+        400.0,
+        250.0,
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(3, c);
@@ -767,9 +811,15 @@ fn test_disallowed() {
 fn test_unsolvable() {
     const N: usize = 3;
     let c = vec![
-         1.0, 1.0, 1.0,
-         f32::INFINITY, f32::INFINITY, f32::INFINITY,
-         1.0, 1.0, 1.0,
+        1.0,
+        1.0,
+        1.0,
+        f32::INFINITY,
+        f32::INFINITY,
+        f32::INFINITY,
+        1.0,
+        1.0,
+        1.0,
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());

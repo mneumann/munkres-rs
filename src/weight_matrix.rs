@@ -31,24 +31,22 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
 
     // Add `val` to every element in row `row`.
     fn add_row(&mut self, row: usize, val: T) {
-        self.c.row_mut(row).mapv_inplace(|cur| {
-            if cur.is_disallowed() {
-                cur
-            } else {
-                cur + val
-            }
-        });
+        self.c
+            .row_mut(row)
+            .mapv_inplace(|cur| if cur.is_disallowed() { cur } else { cur + val });
     }
 
     // Subtract `val` from every element in column `col`.
     fn sub_col(&mut self, col: usize, val: T) {
-        self.c.column_mut(col).mapv_inplace(|cur| {
-            if cur.is_disallowed() {
-                cur
-            } else {
-                cur - val
-            }
-        });
+        self.c.column_mut(col).mapv_inplace(
+            |cur| {
+                if cur.is_disallowed() {
+                    cur
+                } else {
+                    cur - val
+                }
+            },
+        );
     }
 
     fn is_solvable(&self) -> bool {
@@ -63,12 +61,16 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
 
 impl<T: WeightNum> WeightMatrix<T> {
     pub fn from_row_vec(n: usize, data: Vec<T>) -> WeightMatrix<T> {
-        WeightMatrix { c: SquareMatrix::from_shape_vec((n, n), data).unwrap() }
+        WeightMatrix {
+            c: SquareMatrix::from_shape_vec((n, n), data).unwrap(),
+        }
     }
 
     pub fn from_fn<F: Fn((usize, usize)) -> T>(n: usize, f: F) -> WeightMatrix<T> {
         assert!(n > 0);
-        WeightMatrix { c: SquareMatrix::from_shape_fn((n, n), f) }
+        WeightMatrix {
+            c: SquareMatrix::from_shape_fn((n, n), f),
+        }
     }
 
     /// Return the minimum element of row `row`.
@@ -85,13 +87,9 @@ impl<T: WeightNum> WeightMatrix<T> {
 
     // Subtract `val` from every element in row `row`.
     fn sub_row(&mut self, row: usize, val: T) {
-        self.c.row_mut(row).mapv_inplace(|cur| {
-            if cur.is_disallowed() {
-                cur
-            } else {
-                cur - val
-            }
-        });
+        self.c
+            .row_mut(row)
+            .mapv_inplace(|cur| if cur.is_disallowed() { cur } else { cur - val });
     }
 
     pub fn as_slice(&self) -> &[T] {
@@ -103,7 +101,10 @@ impl<T: WeightNum> WeightMatrix<T> {
 fn test_weight_matrix() {
     assert_eq!(0, WeightMatrix::from_row_vec(1, vec![0]).min_of_row(0));
     assert_eq!(1, WeightMatrix::from_row_vec(1, vec![1]).min_of_row(0));
-    assert_eq!(1, WeightMatrix::from_row_vec(2, vec![5, 1, 0, 0]).min_of_row(0));
+    assert_eq!(
+        1,
+        WeightMatrix::from_row_vec(2, vec![5, 1, 0, 0]).min_of_row(0)
+    );
 
     let mut mat = WeightMatrix::from_row_vec(2, vec![0, 1, 2, 3]);
     mat.sub_row(1, 1);

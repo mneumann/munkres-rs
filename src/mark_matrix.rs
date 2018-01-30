@@ -16,7 +16,7 @@ pub struct MarkMatrix {
 impl MarkMatrix {
     pub fn new(n: usize) -> MarkMatrix {
         MarkMatrix {
-            marks: SquareMatrix::from_shape_fn((n, n), |_|  Mark::None),
+            marks: SquareMatrix::from_shape_fn((n, n), |_| Mark::None),
         }
     }
 
@@ -69,7 +69,8 @@ impl MarkMatrix {
 
     #[inline]
     pub fn each_star<F>(&self, mut f: F)
-        where F: FnMut((usize, usize))
+    where
+        F: FnMut((usize, usize)),
     {
         let n = self.n();
 
