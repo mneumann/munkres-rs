@@ -141,6 +141,12 @@ pub trait Weights {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum Error {
+    NoPrimeInRow,
+    MatrixNotSolvable,
+}
+
+#[derive(Debug, Eq, PartialEq)]
 enum Step {
     Step1,
     Step2,
@@ -148,7 +154,7 @@ enum Step {
     Step4(Option<usize>),
     Step5(usize, usize),
     Step6,
-    Failure(&'static str),
+    Failure(Error),
     Done,
 }
 
@@ -287,7 +293,7 @@ fn step5(
                     prev_col = col;
                 } else {
                     // XXX: Can this really happend?
-                    return Step::Failure("no prime in row");
+                    return Step::Failure(Error::NoPrimeInRow);
                 }
             }
             None => {
@@ -348,12 +354,12 @@ where
     return Step::Step4(None);
 }
 
-pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<(usize, usize)>, &'static str>
+pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<(usize, usize)>, Error>
 where
     W: Weights,
 {
     if !weights.is_solvable() {
-        return Err("Matrix can not be solved");
+        return Err(Error::MatrixNotSolvable);
     }
 
     let n = weights.n();
@@ -811,7 +817,6 @@ fn test_disallowed() {
 }
 
 #[test]
-#[should_panic]
 fn test_unsolvable() {
     const N: usize = 3;
     let c = vec![
@@ -827,7 +832,8 @@ fn test_unsolvable() {
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
-    solve_assignment(&mut weights).unwrap();
+    let res = solve_assignment(&mut weights);
+    assert_eq!(Err(Error::MatrixNotSolvable), res);
 }
 
 #[cfg(test)]
