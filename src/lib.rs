@@ -148,6 +148,7 @@ enum Step {
     Step4(Option<usize>),
     Step5(usize, usize),
     Step6,
+    Failure(&'static str),
     Done,
 }
 
@@ -285,8 +286,8 @@ fn step5(
                     path.push((row, col));
                     prev_col = col;
                 } else {
-                    // XXX
-                    panic!("no prime in row");
+                    // XXX: Can this really happend?
+                    return Step::Failure("no prime in row");
                 }
             }
             None => {
@@ -347,12 +348,12 @@ where
     return Step::Step4(None);
 }
 
-pub fn solve_assignment<W>(weights: &mut W) -> Vec<(usize, usize)>
+pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<(usize, usize)>, &'static str>
 where
     W: Weights,
 {
     if !weights.is_solvable() {
-        panic!("Matrix can not be solved");
+        return Err("Matrix can not be solved");
     }
 
     let n = weights.n();
@@ -380,6 +381,9 @@ where
             Step::Step6 => {
                 step = step6(weights, &coverage);
             }
+            Step::Failure(err) => {
+                return Err(err);
+            }
             Step::Done => {
                 break;
             }
@@ -397,7 +401,7 @@ where
     }
     assert!(matching.len() == n);
 
-    return matching;
+    return Ok(matching);
 }
 
 #[test]
@@ -625,7 +629,7 @@ fn test_solve() {
                 ];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let matching = solve_assignment(&mut weights);
+    let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(vec![(0, 1), (1, 2), (2, 0)], matching);
 }
@@ -672,7 +676,7 @@ fn test_solve_equal_rows2() {
     let c = vec![1, 1, 2, 2];
 
     let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c.clone());
-    let matching = solve_assignment(&mut weights);
+    let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
 
@@ -692,7 +696,7 @@ fn test_solve_equal_rows5() {
     ];
 
     let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c.clone());
-    let matching = solve_assignment(&mut weights);
+    let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
 
@@ -713,7 +717,7 @@ fn test_solve_equal_rows5_float() {
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
-    let matching = solve_assignment(&mut weights);
+    let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
 
@@ -734,7 +738,7 @@ fn test_solve_equal_rows5_float2() {
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
-    let matching = solve_assignment(&mut weights);
+    let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
 
@@ -759,7 +763,7 @@ fn test_solve_random10() {
     ];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c.clone());
-    let matching = solve_assignment(&mut weights);
+    let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
 
@@ -801,7 +805,7 @@ fn test_disallowed() {
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(3, c);
-    let matching = solve_assignment(&mut weights);
+    let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(vec![(0, 1), (1, 0), (2, 2)], matching);
 }
@@ -823,7 +827,7 @@ fn test_unsolvable() {
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
-    solve_assignment(&mut weights);
+    solve_assignment(&mut weights).unwrap();
 }
 
 #[cfg(test)]
