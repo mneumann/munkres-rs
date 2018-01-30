@@ -1,4 +1,4 @@
-use square_matrix::SquareMatrix;
+use SquareMatrix;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
@@ -16,13 +16,13 @@ pub struct MarkMatrix {
 impl MarkMatrix {
     pub fn new(n: usize) -> MarkMatrix {
         MarkMatrix {
-            marks: SquareMatrix::from_row_vec(n, (0..n * n).map(|_| Mark::None).collect()),
+            marks: SquareMatrix::from_shape_fn((n, n), |_|  Mark::None),
         }
     }
 
     #[inline]
     pub fn n(&self) -> usize {
-        self.marks.n()
+        self.marks.shape()[0]
     }
 
     pub fn toggle_star(&mut self, pos: (usize, usize)) {

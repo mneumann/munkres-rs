@@ -10,3 +10,4 @@ include = ["src/*.rs", "Cargo.toml", "LICENSE", "README.md"]
 
 [dependencies]
 fixedbitset = "0.1"
+ndarray = "0.10"
