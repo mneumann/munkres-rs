@@ -4,8 +4,7 @@ version = "0.4.0"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/mneumann/munkres-rs"
-description = "Kuhn-Munkres (aka Hungarian) algorithm for solving the
-Assignment Problem in O(n^3)"
+description = "Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem in O(n^3)"
 keywords = ["algorithm", "optimization"]
 include = ["src/*.rs", "Cargo.toml", "LICENSE", "README.md"]
 
