@@ -1,9 +1,7 @@
-#![cfg_attr(test, feature(test))]
-
 /// Kuhn-Munkres Algorithm (also called Hungarian algorithm) for solving the
 /// Assignment Problem.
 ///
-/// Copyright (c) 2015 by Michael Neumann (mneumann@ntecs.de).
+/// Copyright (c) 2015-2019 by Michael Neumann (mneumann@ntecs.de).
 ///
 /// This code is derived from a port of the Python version found here:
 /// https://github.com/bmc/munkres/blob/master/munkres.py
@@ -12,17 +10,10 @@
 //    * Cleanup
 //    * More test cases
 //    * Non-square matrices
-extern crate fixedbitset;
-extern crate ndarray;
-
-#[cfg(test)]
-extern crate test;
-
 use crate::coverage::Coverage;
 use crate::mark_matrix::MarkMatrix;
 pub use crate::weight_matrix::WeightMatrix;
 pub use crate::weight_num::WeightNum;
-
 use ndarray::Array2;
 
 pub type SquareMatrix<T> = Array2<T>;
@@ -708,6 +699,8 @@ fn test_solve_random10() {
 
 #[test]
 fn test_disallowed() {
+    use std::f32;
+
     let c = vec![
         250.0,
         400.0,
@@ -728,6 +721,8 @@ fn test_disallowed() {
 
 #[test]
 fn test_unsolvable() {
+    use std::f32;
+
     const N: usize = 3;
     let c = vec![
         1.0,
@@ -744,29 +739,4 @@ fn test_unsolvable() {
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
     let res = solve_assignment(&mut weights);
     assert_eq!(Err(Error::MatrixNotSolvable), res);
-}
-
-#[cfg(test)]
-fn gen_matrix(n: usize) -> Vec<i32> {
-    (0..n * n)
-        .map(|i| {
-            let row = i / n;
-            let col = i % n;
-            (row * col) as i32
-        })
-        .collect()
-}
-
-#[cfg(test)]
-fn bench_solve_n(n: usize, b: &mut test::Bencher) {
-    let matrix = gen_matrix(n);
-    b.iter(|| {
-        let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(n, matrix.clone());
-        let _matching = solve_assignment(&mut weights);
-    });
-}
-
-#[bench]
-fn bench_solve_100(b: &mut test::Bencher) {
-    bench_solve_n(100, b);
 }

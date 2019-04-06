@@ -7,7 +7,15 @@ repository = "https://github.com/mneumann/munkres-rs"
 description = "Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem in O(n^3)"
 keywords = ["algorithm", "optimization"]
 include = ["src/*.rs", "Cargo.toml", "LICENSE", "README.md"]
+edition = "2018"
 
 [dependencies]
 fixedbitset = "0.1"
 ndarray = "0.11"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "solve_assignment"
+harness = false
