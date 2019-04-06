@@ -21,9 +21,9 @@ extern crate test;
 use std::{f32, f64};
 use std::ops::{Add, Sub};
 
-use coverage::Coverage;
-use mark_matrix::MarkMatrix;
-pub use weight_matrix::WeightMatrix;
+use crate::coverage::Coverage;
+use crate::mark_matrix::MarkMatrix;
+pub use crate::weight_matrix::WeightMatrix;
 
 use ndarray::Array2;
 

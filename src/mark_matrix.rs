@@ -1,4 +1,4 @@
-use SquareMatrix;
+use crate::SquareMatrix;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
