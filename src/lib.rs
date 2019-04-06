@@ -538,10 +538,11 @@ fn test_step5() {
 
 #[test]
 fn test_solve() {
-    let c = vec![250, 400, 350, // row 1
-                 400, 600, 350, // row 2
-                 200, 400, 250  // row 3
-                ];
+    let c = vec![
+        250, 400, 350, // row 1
+        400, 600, 350, // row 2
+        200, 400, 250, // row 3
+    ];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let matching = solve_assignment(&mut weights).unwrap();
@@ -607,7 +608,7 @@ fn test_solve_equal_rows2() {
 fn test_solve_equal_rows5() {
     const N: usize = 5;
     let c = vec![
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     ];
 
     let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c.clone());
