@@ -42,8 +42,13 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
     }
 
     fn is_solvable(&self) -> bool {
-        for row in 0..self.n() {
-            if self.c.row(row).iter().all(|c| !c.is_valid()) {
+        for row in self.c.genrows() {
+            if row.iter().all(|c| !c.is_valid()) {
+                return false;
+            }
+        }
+        for column in self.c.gencolumns() {
+            if column.iter().all(|c| !c.is_valid()) {
                 return false;
             }
         }
@@ -67,14 +72,13 @@ impl<T: WeightNum> WeightMatrix<T> {
 
     /// Return the minimum element of row `row`.
     fn min_of_row(&self, row: usize) -> T {
-        let row_slice = self.c.row(row);
-        let mut min = row_slice[0];
-        for &val in row_slice.iter().skip(1) {
-            if val.is_valid() && val < min {
-                min = val;
-            }
-        }
-        min
+        let row_iter = self.c.row(row);
+        let mut valid_iter = row_iter.iter().filter(|cost| cost.is_valid()).cloned();
+        let first_min = valid_iter.next().unwrap();
+        valid_iter.fold(
+            first_min,
+            |total_min, val| if val < total_min { val } else { total_min },
+        )
     }
 
     // Subtract `val` from every element in row `row`.
