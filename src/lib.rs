@@ -7,13 +7,12 @@
 /// https://github.com/bmc/munkres/blob/master/munkres.py
 /// which is Copyright (c) 2008 Brian M. Clapper.
 use crate::coverage::Coverage;
-pub use crate::mark_matrix::{MarkMatrix, MarkMatrixBitArray, MarkMatrixByteArray};
+pub use crate::mark_matrix::MarkMatrix;
 pub use crate::weight_matrix::WeightMatrix;
 pub use crate::weight_num::WeightNum;
 use ndarray::Array2;
 
 pub type SquareMatrix<T> = Array2<T>;
-type MarkMatrixImpl = MarkMatrixByteArray;
 
 mod coverage;
 mod mark_matrix;
@@ -74,7 +73,7 @@ where
 /// Find a zero (Z) in the resulting matrix. If there is no starred
 /// zero in its row or column, star Z. Repeat for each element in the
 /// matrix. Go to Step 3.
-fn step2<W>(c: &W, marks: &mut impl MarkMatrix, cov: &mut Coverage) -> Step
+fn step2<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
 where
     W: Weights,
 {
@@ -102,7 +101,7 @@ where
 /// Cover each column containing a starred zero. If K columns are
 /// covered, the starred zeros describe a complete set of unique
 /// assignments. In this case, Go to DONE, otherwise, Go to Step 4.
-fn step3<W>(c: &W, marks: &impl MarkMatrix, cov: &mut Coverage) -> Step
+fn step3<W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step
 where
     W: Weights,
 {
@@ -131,7 +130,7 @@ where
 /// cover this row and uncover the column containing the starred
 /// zero. Continue in this manner until there are no uncovered zeros
 /// left. Save the smallest uncovered value and Go to Step 6.
-fn step4<W>(c: &W, marks: &mut impl MarkMatrix, cov: &mut Coverage) -> Step
+fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
 where
     W: Weights,
 {
@@ -172,7 +171,7 @@ where
 /// of the series, star each primed zero of the series, erase all
 /// primes and uncover every line in the matrix. Return to Step 3
 fn step5(
-    marks: &mut impl MarkMatrix,
+    marks: &mut MarkMatrix,
     cov: &mut Coverage,
     z0_pos: Position,
     path: &mut Vec<Position>,
@@ -264,21 +263,13 @@ pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<Position>, Error>
 where
     W: Weights,
 {
-    solve_assignment_generic::<W, MarkMatrixImpl>(weights)
-}
-
-pub fn solve_assignment_generic<W, M>(weights: &mut W) -> Result<Vec<Position>, Error>
-where
-    W: Weights,
-    M: MarkMatrix,
-{
     if !weights.is_solvable() {
         return Err(Error::MatrixNotSolvable);
     }
 
     let n = weights.n();
 
-    let mut marks = M::new(n);
+    let mut marks = MarkMatrix::new(n);
     let mut coverage = Coverage::new(n);
     let mut path = Vec::with_capacity(n);
 
@@ -349,7 +340,7 @@ fn test_step2() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrixImpl::new(weights.n());
+    let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
     let next_step = step2(&weights, &mut marks, &mut coverage);
@@ -381,7 +372,7 @@ fn test_step3() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrixImpl::new(weights.n());
+    let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
     marks.star(pos(0, 0));
@@ -404,7 +395,7 @@ fn test_step4_case1() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrixImpl::new(weights.n());
+    let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
     marks.star(pos(0, 0));
@@ -441,7 +432,7 @@ fn test_step6() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrixImpl::new(weights.n());
+    let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
     marks.star(pos(0, 0));
@@ -463,7 +454,7 @@ fn test_step4_case2() {
     let c = vec![0, 0, 100, 50, 100, 0, 0, 50, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrixImpl::new(weights.n());
+    let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
     marks.star(pos(0, 0));
@@ -500,7 +491,7 @@ fn test_step5() {
     let c = vec![0, 0, 100, 50, 100, 0, 0, 50, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrixImpl::new(weights.n());
+    let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
     marks.star(pos(0, 0));
@@ -571,7 +562,7 @@ fn test_solve_equal_rows_stepwise() {
 
     // step 2
 
-    let mut marks = MarkMatrixImpl::new(weights.n());
+    let mut marks = MarkMatrix::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
     let next_step = step2(&weights, &mut marks, &mut coverage);
     assert_eq!(Step::Step3, next_step);
