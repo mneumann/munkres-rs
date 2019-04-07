@@ -1,10 +1,11 @@
+use crate::Position;
 use fixedbitset::FixedBitSet;
 
 #[derive(Debug)]
 pub struct Coverage {
     n: usize,
     rows: FixedBitSet,
-    cols: FixedBitSet,
+    columns: FixedBitSet,
 }
 
 fn is_bitset_clear(bitset: &FixedBitSet) -> bool {
@@ -27,20 +28,20 @@ impl Coverage {
         Coverage {
             n: n,
             rows: FixedBitSet::with_capacity(n),
-            cols: FixedBitSet::with_capacity(n),
+            columns: FixedBitSet::with_capacity(n),
         }
     }
 
-    /// find a single uncovered (row, col) pair. Iterates in col, row order.
+    /// find a single uncovered (row, column) pair. Iterates in column, row order.
     #[inline]
-    pub fn find_uncovered_col_row<F>(&self, mut f: F) -> Option<(usize, usize)>
+    pub fn find_uncovered_column_row<F>(&self, mut f: F) -> Option<Position>
     where
-        F: FnMut((usize, usize)) -> bool,
+        F: FnMut(Position) -> bool,
     {
         let n = self.n();
 
-        for col in 0..n {
-            if self.is_col_covered(col) {
+        for column in 0..n {
+            if self.is_column_covered(column) {
                 continue;
             }
             for row in 0..n {
@@ -48,7 +49,7 @@ impl Coverage {
                     continue;
                 }
 
-                let pos = (row, col);
+                let pos = Position { row, column };
                 if f(pos) {
                     return Some(pos);
                 }
@@ -58,11 +59,11 @@ impl Coverage {
         return None;
     }
 
-    /// iterates over all uncovered (row, col) pairs in row, col order
+    /// iterates over all uncovered (row, column) pairs in row, column order
     #[inline]
-    pub fn iter_uncovered_row_col<F>(&self, mut f: F)
+    pub fn iter_uncovered_row_column<F>(&self, mut f: F)
     where
-        F: FnMut((usize, usize)),
+        F: FnMut(Position),
     {
         let n = self.n();
 
@@ -71,21 +72,21 @@ impl Coverage {
                 continue;
             }
 
-            for col in 0..n {
-                if self.is_col_covered(col) {
+            for column in 0..n {
+                if self.is_column_covered(column) {
                     continue;
                 }
 
-                f((row, col));
+                f(Position { row, column });
             }
         }
     }
 
-    /// iterates over all uncovered (row, col) pairs in row, col order, and set covered if f returns true.
+    /// iterates over all uncovered (row, column) pairs in row, column order, and set covered if f returns true.
     #[inline]
-    pub fn iter_uncovered_row_col_and_cover<F>(&mut self, mut f: F)
+    pub fn iter_uncovered_row_column_and_cover<F>(&mut self, mut f: F)
     where
-        F: FnMut((usize, usize)) -> bool,
+        F: FnMut(Position) -> bool,
     {
         let n = self.n();
 
@@ -94,16 +95,16 @@ impl Coverage {
                 continue;
             }
 
-            'col: for col in 0..n {
-                if self.is_col_covered(col) {
+            'column: for column in 0..n {
+                if self.is_column_covered(column) {
                     continue;
                 }
 
-                let pos = (row, col);
+                let pos = Position { row, column };
                 if f(pos) {
                     self.cover(pos);
                     // the complete row is covered! break the loop!
-                    break 'col;
+                    break 'column;
                 }
             }
         }
@@ -116,28 +117,27 @@ impl Coverage {
     }
 
     #[inline]
-    pub fn is_col_covered(&self, col: usize) -> bool {
-        debug_assert!(col < self.n());
-        self.cols.contains(col)
+    pub fn is_column_covered(&self, column: usize) -> bool {
+        debug_assert!(column < self.n());
+        self.columns.contains(column)
     }
 
     #[inline]
-    pub fn cover(&mut self, pos: (usize, usize)) {
-        let (row, col) = pos;
-        self.cover_row(row);
-        self.cover_col(col);
+    pub fn cover(&mut self, pos: Position) {
+        self.cover_row(pos.row);
+        self.cover_column(pos.column);
     }
 
     #[inline]
-    pub fn cover_col(&mut self, col: usize) {
-        debug_assert!(col < self.n());
-        self.cols.set(col, true);
+    pub fn cover_column(&mut self, column: usize) {
+        debug_assert!(column < self.n());
+        self.columns.set(column, true);
     }
 
     #[inline]
-    pub fn uncover_col(&mut self, col: usize) {
-        debug_assert!(col < self.n());
-        self.cols.set(col, false);
+    pub fn uncover_column(&mut self, column: usize) {
+        debug_assert!(column < self.n());
+        self.columns.set(column, false);
     }
 
     #[inline]
@@ -148,10 +148,10 @@ impl Coverage {
 
     pub fn clear(&mut self) {
         self.rows.clear();
-        self.cols.clear();
+        self.columns.clear();
     }
 
     pub fn is_clear(&self) -> bool {
-        is_bitset_clear(&self.rows) && is_bitset_clear(&self.cols)
+        is_bitset_clear(&self.rows) && is_bitset_clear(&self.columns)
     }
 }

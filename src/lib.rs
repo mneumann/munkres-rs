@@ -6,34 +6,43 @@
 /// This code is derived from a port of the Python version found here:
 /// https://github.com/bmc/munkres/blob/master/munkres.py
 /// which is Copyright (c) 2008 Brian M. Clapper.
-// TODO:
-//    * Cleanup
-//    * More test cases
-//    * Non-square matrices
 use crate::coverage::Coverage;
-use crate::mark_matrix::MarkMatrix;
+pub use crate::mark_matrix::{MarkMatrix, MarkMatrixBitArray, MarkMatrixByteArray};
 pub use crate::weight_matrix::WeightMatrix;
 pub use crate::weight_num::WeightNum;
 use ndarray::Array2;
 
 pub type SquareMatrix<T> = Array2<T>;
+type MarkMatrixImpl = MarkMatrixByteArray;
 
 mod coverage;
 mod mark_matrix;
 pub mod weight_matrix;
 pub mod weight_num;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Position {
+    pub row: usize,
+    pub column: usize,
+}
+
+impl std::convert::From<(usize, usize)> for Position {
+    fn from((row, column): (usize, usize)) -> Self {
+        Position { row, column }
+    }
+}
+
 pub trait Weights {
     type T: WeightNum;
     fn n(&self) -> usize;
-    fn element_at(&self, pos: (usize, usize)) -> Self::T;
+    fn element_at(&self, pos: Position) -> Self::T;
 
     fn sub_min_of_each_row(&mut self);
     fn add_row(&mut self, row: usize, val: Self::T);
-    fn sub_col(&mut self, col: usize, val: Self::T);
+    fn sub_column(&mut self, col: usize, val: Self::T);
 
     #[inline]
-    fn is_element_zero(&self, pos: (usize, usize)) -> bool {
+    fn is_element_zero(&self, pos: Position) -> bool {
         self.element_at(pos).is_zero()
     }
 
@@ -52,7 +61,7 @@ enum Step {
     Step2,
     Step3,
     Step4(Option<usize>),
-    Step5(usize, usize),
+    Step5(Position),
     Step6,
     Failure(Error),
     Done,
@@ -71,7 +80,7 @@ where
 /// Find a zero (Z) in the resulting matrix. If there is no starred
 /// zero in its row or column, star Z. Repeat for each element in the
 /// matrix. Go to Step 3.
-fn step2<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
+fn step2<W>(c: &W, marks: &mut impl MarkMatrix, cov: &mut Coverage) -> Step
 where
     W: Weights,
 {
@@ -81,9 +90,9 @@ where
     assert!(cov.n() == n);
     debug_assert!(cov.is_clear());
 
-    cov.iter_uncovered_row_col_and_cover(|pos| {
+    cov.iter_uncovered_row_column_and_cover(|pos| {
         if c.is_element_zero(pos) {
-            marks.star(pos);
+            marks.star(pos.into());
             true
         } else {
             false
@@ -99,7 +108,7 @@ where
 /// Cover each column containing a starred zero. If K columns are
 /// covered, the starred zeros describe a complete set of unique
 /// assignments. In this case, Go to DONE, otherwise, Go to Step 4.
-fn step3<W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step
+fn step3<W>(c: &W, marks: &impl MarkMatrix, cov: &mut Coverage) -> Step
 where
     W: Weights,
 {
@@ -110,8 +119,8 @@ where
 
     let mut count: usize = 0;
 
-    marks.each_star(|(_, col)| {
-        cov.cover_col(col);
+    marks.each_star(|Position { column, .. }| {
+        cov.cover_column(column);
         count += 1;
     });
 
@@ -128,7 +137,7 @@ where
 /// cover this row and uncover the column containing the starred
 /// zero. Continue in this manner until there are no uncovered zeros
 /// left. Save the smallest uncovered value and Go to Step 6.
-fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
+fn step4<W>(c: &W, marks: &mut impl MarkMatrix, cov: &mut Coverage) -> Step
 where
     W: Weights,
 {
@@ -139,20 +148,20 @@ where
 
     loop {
         // find uncovered zero element
-        match cov.find_uncovered_col_row(|pos| c.is_element_zero(pos)) {
+        match cov.find_uncovered_column_row(|pos| c.is_element_zero(pos)) {
             None => {
                 return Step::Step6;
             }
-            Some((row, col)) => {
-                marks.prime((row, col));
-                match marks.find_first_star_in_row(row) {
+            Some(pos) => {
+                marks.prime(pos);
+                match marks.find_first_star_in_row(pos.row) {
                     Some(star_col) => {
-                        cov.cover_row(row);
-                        cov.uncover_col(star_col);
+                        cov.cover_row(pos.row);
+                        cov.uncover_column(star_col);
                     }
                     None => {
                         // in Python: self.Z0_r, self.Z0_c
-                        return Step::Step5(row, col);
+                        return Step::Step5(pos);
                     }
                 }
             }
@@ -169,9 +178,9 @@ where
 /// of the series, star each primed zero of the series, erase all
 /// primes and uncover every line in the matrix. Return to Step 3
 fn step5(
-    marks: &mut MarkMatrix,
+    marks: &mut impl MarkMatrix,
     cov: &mut Coverage,
-    z0: (usize, usize),
+    z0_pos: Position,
     path: &mut Vec<(usize, usize)>,
 ) -> Step {
     let n = cov.n();
@@ -179,18 +188,18 @@ fn step5(
     assert!(marks.n() == n);
 
     path.clear();
-    path.push(z0);
+    path.push((z0_pos.row, z0_pos.column));
 
-    let mut prev_col = z0.1;
+    let mut prev_col = z0_pos.column;
 
     loop {
-        match marks.find_first_star_in_col(prev_col) {
+        match marks.find_first_star_in_column(prev_col) {
             Some(row) => {
                 path.push((row, prev_col));
 
-                if let Some(col) = marks.find_first_prime_in_row(row) {
-                    path.push((row, col));
-                    prev_col = col;
+                if let Some(column) = marks.find_first_prime_in_row(row) {
+                    path.push((row, column));
+                    prev_col = column;
                 } else {
                     // XXX: Can this really happend?
                     return Step::Failure(Error::NoPrimeInRow);
@@ -204,7 +213,7 @@ fn step5(
 
     // convert_path
     for &pos in path.iter() {
-        marks.toggle_star(pos);
+        marks.toggle_star(pos.into());
     }
 
     cov.clear();
@@ -225,7 +234,7 @@ where
 
     // Find the smallest uncovered value in the matrix
     let mut min = None;
-    cov.iter_uncovered_row_col(|pos| {
+    cov.iter_uncovered_row_column(|pos| {
         let elm = c.element_at(pos);
         min = Some(match min {
             Some(m) => {
@@ -245,9 +254,9 @@ where
             c.add_row(row, minval);
         }
     }
-    for col in 0..n {
-        if !cov.is_col_covered(col) {
-            c.sub_col(col, minval);
+    for column in 0..n {
+        if !cov.is_column_covered(column) {
+            c.sub_column(column, minval);
         }
     }
 
@@ -258,13 +267,21 @@ pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<(usize, usize)>, Error
 where
     W: Weights,
 {
+    solve_assignment_generic::<W, MarkMatrixImpl>(weights)
+}
+
+pub fn solve_assignment_generic<W, M>(weights: &mut W) -> Result<Vec<(usize, usize)>, Error>
+where
+    W: Weights,
+    M: MarkMatrix,
+{
     if !weights.is_solvable() {
         return Err(Error::MatrixNotSolvable);
     }
 
     let n = weights.n();
 
-    let mut marks = MarkMatrix::new(n);
+    let mut marks = M::new(n);
     let mut coverage = Coverage::new(n);
     let mut path = Vec::with_capacity(n);
 
@@ -281,8 +298,8 @@ where
             Step::Step4(_) => {
                 step = step4(weights, &mut marks, &mut coverage);
             }
-            Step::Step5(z0_r, z0_c) => {
-                step = step5(&mut marks, &mut coverage, (z0_r, z0_c), &mut path);
+            Step::Step5(z0_pos) => {
+                step = step5(&mut marks, &mut coverage, z0_pos, &mut path);
             }
             Step::Step6 => {
                 step = step6(weights, &coverage);
@@ -299,15 +316,20 @@ where
     // now look for the starred elements
     let mut matching = Vec::with_capacity(n);
     for row in 0..n {
-        for col in 0..n {
-            if marks.is_star((row, col)) {
-                matching.push((row, col));
+        for column in 0..n {
+            if marks.is_star(Position { row, column }) {
+                matching.push((row, column));
             }
         }
     }
     assert!(matching.len() == n);
 
     return Ok(matching);
+}
+
+#[cfg(test)]
+fn pos(row: usize, column: usize) -> Position {
+    Position { row, column }
 }
 
 #[test]
@@ -329,41 +351,31 @@ fn test_step2() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
+    let mut marks = MarkMatrixImpl::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
     let next_step = step2(&weights, &mut marks, &mut coverage);
     assert_eq!(Step::Step3, next_step);
 
-    assert_eq!(true, marks.is_star((0, 0)));
-    assert_eq!(false, marks.is_star((0, 1)));
-    assert_eq!(false, marks.is_star((0, 2)));
+    assert_eq!(true, marks.is_star(pos(0, 0)));
+    assert_eq!(false, marks.is_star(pos(0, 1)));
+    assert_eq!(false, marks.is_star(pos(0, 2)));
 
-    assert_eq!(false, marks.is_star((1, 0)));
-    assert_eq!(false, marks.is_star((1, 1)));
-    assert_eq!(true, marks.is_star((1, 2)));
+    assert_eq!(false, marks.is_star(pos(1, 0)));
+    assert_eq!(false, marks.is_star(pos(1, 1)));
+    assert_eq!(true, marks.is_star(pos(1, 2)));
 
-    assert_eq!(false, marks.is_star((2, 0)));
-    assert_eq!(false, marks.is_star((2, 1)));
-    assert_eq!(false, marks.is_star((2, 2)));
+    assert_eq!(false, marks.is_star(pos(2, 0)));
+    assert_eq!(false, marks.is_star(pos(2, 1)));
+    assert_eq!(false, marks.is_star(pos(2, 2)));
 
     // coverage was cleared
     assert_eq!(false, coverage.is_row_covered(0));
     assert_eq!(false, coverage.is_row_covered(1));
     assert_eq!(false, coverage.is_row_covered(2));
-    assert_eq!(false, coverage.is_col_covered(0));
-    assert_eq!(false, coverage.is_col_covered(1));
-    assert_eq!(false, coverage.is_col_covered(2));
-
-    //
-    // assert_eq!(true, coverage.is_row_covered(0));
-    // assert_eq!(true, coverage.is_row_covered(1));
-    // assert_eq!(false, coverage.is_row_covered(2));
-    //
-    // assert_eq!(true, coverage.is_col_covered(0));
-    // assert_eq!(false, coverage.is_col_covered(1));
-    // assert_eq!(true, coverage.is_col_covered(2));
-    //
+    assert_eq!(false, coverage.is_column_covered(0));
+    assert_eq!(false, coverage.is_column_covered(1));
+    assert_eq!(false, coverage.is_column_covered(2));
 }
 
 #[test]
@@ -371,18 +383,18 @@ fn test_step3() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
+    let mut marks = MarkMatrixImpl::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
-    marks.star((0, 0));
-    marks.star((1, 2));
+    marks.star(pos(0, 0));
+    marks.star(pos(1, 2));
 
     let next_step = step3(&weights, &marks, &mut coverage);
     assert_eq!(Step::Step4(Some(2)), next_step);
 
-    assert_eq!(true, coverage.is_col_covered(0));
-    assert_eq!(false, coverage.is_col_covered(1));
-    assert_eq!(true, coverage.is_col_covered(2));
+    assert_eq!(true, coverage.is_column_covered(0));
+    assert_eq!(false, coverage.is_column_covered(1));
+    assert_eq!(true, coverage.is_column_covered(2));
 
     assert_eq!(false, coverage.is_row_covered(0));
     assert_eq!(false, coverage.is_row_covered(1));
@@ -394,36 +406,36 @@ fn test_step4_case1() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
+    let mut marks = MarkMatrixImpl::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
-    marks.star((0, 0));
-    marks.star((1, 2));
-    coverage.cover_col(0);
-    coverage.cover_col(2);
+    marks.star(pos(0, 0));
+    marks.star(pos(1, 2));
+    coverage.cover_column(0);
+    coverage.cover_column(2);
 
     let next_step = step4(&weights, &mut marks, &mut coverage);
 
     assert_eq!(Step::Step6, next_step);
 
     // coverage did not change.
-    assert_eq!(true, coverage.is_col_covered(0));
-    assert_eq!(false, coverage.is_col_covered(1));
-    assert_eq!(true, coverage.is_col_covered(2));
+    assert_eq!(true, coverage.is_column_covered(0));
+    assert_eq!(false, coverage.is_column_covered(1));
+    assert_eq!(true, coverage.is_column_covered(2));
     assert_eq!(false, coverage.is_row_covered(0));
     assert_eq!(false, coverage.is_row_covered(1));
     assert_eq!(false, coverage.is_row_covered(2));
 
     // starring did not change.
-    assert_eq!(true, marks.is_star((0, 0)));
-    assert_eq!(false, marks.is_star((0, 1)));
-    assert_eq!(false, marks.is_star((0, 2)));
-    assert_eq!(false, marks.is_star((1, 0)));
-    assert_eq!(false, marks.is_star((1, 1)));
-    assert_eq!(true, marks.is_star((1, 2)));
-    assert_eq!(false, marks.is_star((2, 0)));
-    assert_eq!(false, marks.is_star((2, 1)));
-    assert_eq!(false, marks.is_star((2, 2)));
+    assert_eq!(true, marks.is_star(pos(0, 0)));
+    assert_eq!(false, marks.is_star(pos(0, 1)));
+    assert_eq!(false, marks.is_star(pos(0, 2)));
+    assert_eq!(false, marks.is_star(pos(1, 0)));
+    assert_eq!(false, marks.is_star(pos(1, 1)));
+    assert_eq!(true, marks.is_star(pos(1, 2)));
+    assert_eq!(false, marks.is_star(pos(2, 0)));
+    assert_eq!(false, marks.is_star(pos(2, 1)));
+    assert_eq!(false, marks.is_star(pos(2, 2)));
 }
 
 #[test]
@@ -431,13 +443,13 @@ fn test_step6() {
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
+    let mut marks = MarkMatrixImpl::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
-    marks.star((0, 0));
-    marks.star((1, 2));
-    coverage.cover_col(0);
-    coverage.cover_col(2);
+    marks.star(pos(0, 0));
+    marks.star(pos(1, 2));
+    coverage.cover_column(0);
+    coverage.cover_column(2);
 
     let next_step = step6(&mut weights, &coverage);
 
@@ -453,36 +465,36 @@ fn test_step4_case2() {
     let c = vec![0, 0, 100, 50, 100, 0, 0, 50, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
+    let mut marks = MarkMatrixImpl::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
-    marks.star((0, 0));
-    marks.star((1, 2));
-    coverage.cover_col(0);
-    coverage.cover_col(2);
+    marks.star(pos(0, 0));
+    marks.star(pos(1, 2));
+    coverage.cover_column(0);
+    coverage.cover_column(2);
 
     let next_step = step4(&weights, &mut marks, &mut coverage);
 
-    assert_eq!(Step::Step5(2, 0), next_step);
+    assert_eq!(Step::Step5(pos(2, 0)), next_step);
 
     // coverage DID CHANGE!
-    assert_eq!(false, coverage.is_col_covered(0));
-    assert_eq!(false, coverage.is_col_covered(1));
-    assert_eq!(true, coverage.is_col_covered(2));
+    assert_eq!(false, coverage.is_column_covered(0));
+    assert_eq!(false, coverage.is_column_covered(1));
+    assert_eq!(true, coverage.is_column_covered(2));
     assert_eq!(true, coverage.is_row_covered(0));
     assert_eq!(false, coverage.is_row_covered(1));
     assert_eq!(false, coverage.is_row_covered(2));
 
     // starring DID CHANGE!
-    assert_eq!(true, marks.is_star((0, 0)));
-    assert_eq!(true, marks.is_prime((0, 1)));
-    assert_eq!(true, marks.is_none((0, 2)));
-    assert_eq!(true, marks.is_none((1, 0)));
-    assert_eq!(true, marks.is_none((1, 1)));
-    assert_eq!(true, marks.is_star((1, 2)));
-    assert_eq!(true, marks.is_prime((2, 0)));
-    assert_eq!(true, marks.is_none((2, 1)));
-    assert_eq!(true, marks.is_none((2, 2)));
+    assert_eq!(true, marks.is_star(pos(0, 0)));
+    assert_eq!(true, marks.is_prime(pos(0, 1)));
+    assert_eq!(true, marks.is_none(pos(0, 2)));
+    assert_eq!(true, marks.is_none(pos(1, 0)));
+    assert_eq!(true, marks.is_none(pos(1, 1)));
+    assert_eq!(true, marks.is_star(pos(1, 2)));
+    assert_eq!(true, marks.is_prime(pos(2, 0)));
+    assert_eq!(true, marks.is_none(pos(2, 1)));
+    assert_eq!(true, marks.is_none(pos(2, 2)));
 }
 
 #[test]
@@ -490,41 +502,41 @@ fn test_step5() {
     let c = vec![0, 0, 100, 50, 100, 0, 0, 50, 50];
 
     let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
+    let mut marks = MarkMatrixImpl::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
 
-    marks.star((0, 0));
-    marks.prime((0, 1));
-    marks.star((1, 2));
-    marks.prime((2, 0));
+    marks.star(pos(0, 0));
+    marks.prime(pos(0, 1));
+    marks.star(pos(1, 2));
+    marks.prime(pos(2, 0));
 
-    coverage.cover_col(2);
+    coverage.cover_column(2);
     coverage.cover_row(0);
 
     let mut path = Vec::new();
-    let next_step = step5(&mut marks, &mut coverage, (2, 0), &mut path);
+    let next_step = step5(&mut marks, &mut coverage, pos(2, 0), &mut path);
     assert_eq!(Step::Step3, next_step);
 
     // coverage DID CHANGE!
-    assert_eq!(false, coverage.is_col_covered(0));
-    assert_eq!(false, coverage.is_col_covered(1));
-    assert_eq!(false, coverage.is_col_covered(2));
+    assert_eq!(false, coverage.is_column_covered(0));
+    assert_eq!(false, coverage.is_column_covered(1));
+    assert_eq!(false, coverage.is_column_covered(2));
     assert_eq!(false, coverage.is_row_covered(0));
     assert_eq!(false, coverage.is_row_covered(1));
     assert_eq!(false, coverage.is_row_covered(2));
 
     // starring DID CHANGE!
-    assert_eq!(true, marks.is_none((0, 0)));
-    assert_eq!(true, marks.is_star((0, 1)));
-    assert_eq!(true, marks.is_none((0, 2)));
+    assert_eq!(true, marks.is_none(pos(0, 0)));
+    assert_eq!(true, marks.is_star(pos(0, 1)));
+    assert_eq!(true, marks.is_none(pos(0, 2)));
 
-    assert_eq!(true, marks.is_none((1, 0)));
-    assert_eq!(true, marks.is_none((1, 1)));
-    assert_eq!(true, marks.is_star((1, 2)));
+    assert_eq!(true, marks.is_none(pos(1, 0)));
+    assert_eq!(true, marks.is_none(pos(1, 1)));
+    assert_eq!(true, marks.is_star(pos(1, 2)));
 
-    assert_eq!(true, marks.is_star((2, 0)));
-    assert_eq!(true, marks.is_none((2, 1)));
-    assert_eq!(true, marks.is_none((2, 2)));
+    assert_eq!(true, marks.is_star(pos(2, 0)));
+    assert_eq!(true, marks.is_none(pos(2, 1)));
+    assert_eq!(true, marks.is_none(pos(2, 2)));
 }
 
 #[test]
@@ -548,10 +560,10 @@ fn test_solve_equal_rows_stepwise() {
 
     let mut weights: WeightMatrix<u32> = WeightMatrix::from_row_vec(N, c);
 
-    assert_eq!(1, weights.element_at((0, 0)));
-    assert_eq!(1, weights.element_at((0, 1)));
-    assert_eq!(2, weights.element_at((1, 0)));
-    assert_eq!(2, weights.element_at((1, 1)));
+    assert_eq!(1, weights.element_at(pos(0, 0)));
+    assert_eq!(1, weights.element_at(pos(0, 1)));
+    assert_eq!(2, weights.element_at(pos(1, 0)));
+    assert_eq!(2, weights.element_at(pos(1, 1)));
 
     // step 1
 
@@ -561,16 +573,16 @@ fn test_solve_equal_rows_stepwise() {
 
     // step 2
 
-    let mut marks = MarkMatrix::new(weights.n());
+    let mut marks = MarkMatrixImpl::new(weights.n());
     let mut coverage = Coverage::new(weights.n());
     let next_step = step2(&weights, &mut marks, &mut coverage);
     assert_eq!(Step::Step3, next_step);
     assert!(coverage.is_clear());
 
-    assert!(marks.is_star((0, 0)));
-    assert!(marks.is_star((1, 1)));
-    assert!(marks.is_none((0, 1)));
-    assert!(marks.is_none((1, 0)));
+    assert!(marks.is_star(pos(0, 0)));
+    assert!(marks.is_star(pos(1, 1)));
+    assert!(marks.is_none(pos(0, 1)));
+    assert!(marks.is_none(pos(1, 0)));
 
     // step 3
     let next_step = step3(&weights, &mut marks, &mut coverage);

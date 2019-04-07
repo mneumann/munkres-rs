@@ -1,6 +1,4 @@
-use crate::SquareMatrix;
-use crate::WeightNum;
-use crate::Weights;
+use crate::{Position, SquareMatrix, WeightNum, Weights};
 
 #[derive(Debug)]
 pub struct WeightMatrix<T: WeightNum> {
@@ -16,8 +14,8 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
     }
 
     #[inline]
-    fn element_at(&self, pos: (usize, usize)) -> T {
-        self.c[pos]
+    fn element_at(&self, pos: Position) -> T {
+        self.c[(pos.row, pos.column)]
     }
 
     // for each row, subtracts the minimum of that row from each other value in the
@@ -37,7 +35,7 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
     }
 
     // Subtract `val` from every element in column `col`.
-    fn sub_col(&mut self, col: usize, val: T) {
+    fn sub_column(&mut self, col: usize, val: T) {
         self.c.column_mut(col).mapv_inplace(
             |cur| {
                 if cur.is_disallowed() {
