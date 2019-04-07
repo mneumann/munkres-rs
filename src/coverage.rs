@@ -53,22 +53,12 @@ impl Coverage {
 
     /// iterates over all uncovered (row, column) pairs in row, column order
     #[inline]
-    pub fn iter_uncovered_row_column<F>(&self, mut f: F)
+    pub fn iter_uncovered_row_column_order<F>(&self, mut f: F)
     where
         F: FnMut(Position),
     {
-        let n = self.n();
-
-        for row in 0..n {
-            if self.is_row_covered(row) {
-                continue;
-            }
-
-            for column in 0..n {
-                if self.is_column_covered(column) {
-                    continue;
-                }
-
+        for row in self.uncovered_rows.ones() {
+            for column in self.uncovered_columns.ones() {
                 f(Position { row, column });
             }
         }

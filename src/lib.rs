@@ -231,7 +231,7 @@ where
 
     // Find the smallest uncovered value in the matrix
     let mut min = None;
-    cov.iter_uncovered_row_column(|pos| {
+    cov.iter_uncovered_row_column_order(|pos| {
         let elm = c.element_at(pos);
         min = Some(match min {
             Some(m) => {
