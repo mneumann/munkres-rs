@@ -4,10 +4,10 @@ use fixedbitset::FixedBitSet;
 #[derive(Debug)]
 pub struct Coverage {
     n: usize,
-    /// A bit is set, if the row is covered.
-    covered_rows: FixedBitSet,
-    /// A bit is set, if the column is covered.
-    covered_columns: FixedBitSet,
+    /// A bit is set, if the row is uncovered.
+    uncovered_rows: FixedBitSet,
+    /// A bit is set, if the column is uncovered.
+    uncovered_columns: FixedBitSet,
 }
 
 impl Coverage {
@@ -18,10 +18,18 @@ impl Coverage {
 
     pub fn new(n: usize) -> Coverage {
         assert!(n > 0);
+
+        // We start with all bits set (all rows/columns) uncovered.
+        let mut all_rows_uncovered = FixedBitSet::with_capacity(n);
+        all_rows_uncovered.set_range(.., true);
+
+        // We can simply clone the rows as we work on square matrices
+        let all_columns_uncovered = all_rows_uncovered.clone();
+
         Coverage {
             n: n,
-            covered_rows: FixedBitSet::with_capacity(n),
-            covered_columns: FixedBitSet::with_capacity(n),
+            uncovered_rows: all_rows_uncovered,
+            uncovered_columns: all_columns_uncovered,
         }
     }
 
@@ -106,13 +114,13 @@ impl Coverage {
     #[inline]
     pub fn is_row_covered(&self, row: usize) -> bool {
         debug_assert!(row < self.n());
-        self.covered_rows.contains(row)
+        !self.uncovered_rows.contains(row)
     }
 
     #[inline]
     pub fn is_column_covered(&self, column: usize) -> bool {
         debug_assert!(column < self.n());
-        self.covered_columns.contains(column)
+        !self.uncovered_columns.contains(column)
     }
 
     #[inline]
@@ -124,36 +132,28 @@ impl Coverage {
     #[inline]
     pub fn cover_column(&mut self, column: usize) {
         debug_assert!(column < self.n());
-        self.covered_columns.set(column, true);
+        self.uncovered_columns.set(column, false);
     }
 
     #[inline]
     pub fn uncover_column(&mut self, column: usize) {
         debug_assert!(column < self.n());
-        self.covered_columns.set(column, false);
+        self.uncovered_columns.set(column, true);
     }
 
     #[inline]
     pub fn cover_row(&mut self, row: usize) {
         debug_assert!(row < self.n());
-        self.covered_rows.set(row, true);
+        self.uncovered_rows.set(row, false);
     }
 
     pub fn clear(&mut self) {
-        self.covered_rows.clear();
-        self.covered_columns.clear();
+        self.uncovered_rows.set_range(.., true);
+        self.uncovered_columns.set_range(.., true);
     }
 
     pub fn all_uncovered(&self) -> bool {
-        is_bitset_clear(&self.covered_rows) && is_bitset_clear(&self.covered_columns)
+        self.uncovered_rows.count_ones(..) + self.uncovered_columns.count_ones(..)
+            == (self.n + self.n)
     }
-}
-
-fn is_bitset_clear(bitset: &FixedBitSet) -> bool {
-    for elm in bitset.as_slice().iter() {
-        if *elm != 0 {
-            return false;
-        }
-    }
-    return true;
 }
