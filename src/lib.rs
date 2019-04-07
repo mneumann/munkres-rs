@@ -48,32 +48,19 @@ pub enum Error {
     MatrixNotSolvable,
 }
 
-#[derive(Debug, Eq, PartialEq)]
-enum Step {
-    Step1,
-    Step2,
-    Step3,
-    Step4(Option<usize>),
-    Step5(Position),
-    Step6,
-    Failure(Error),
-    Done,
-}
-
 /// For each row of the matrix, find the smallest element and
 /// subtract it from every element in its row. Go to Step 2.
-fn step1<W>(c: &mut W) -> Step
+fn step1<W>(c: &mut W)
 where
     W: Weights,
 {
     c.sub_min_of_each_row();
-    return Step::Step2;
 }
 
 /// Find a zero (Z) in the resulting matrix. If there is no starred
 /// zero in its row or column, star Z. Repeat for each element in the
 /// matrix. Go to Step 3.
-fn step2<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
+fn step2<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage)
 where
     W: Weights,
 {
@@ -94,14 +81,18 @@ where
 
     // clear covers
     cov.clear();
+}
 
-    return Step::Step3;
+#[derive(Debug, Eq, PartialEq)]
+enum Step3 {
+    Done,
+    ContinueWithStep4 { star_count: usize },
 }
 
 /// Cover each column containing a starred zero. If K columns are
 /// covered, the starred zeros describe a complete set of unique
 /// assignments. In this case, Go to DONE, otherwise, Go to Step 4.
-fn step3<W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step
+fn step3<W>(c: &W, marks: &MarkMatrix, cov: &mut Coverage) -> Step3
 where
     W: Weights,
 {
@@ -110,19 +101,25 @@ where
     assert!(marks.n() == n);
     assert!(cov.n() == n);
 
-    let mut count: usize = 0;
+    let mut star_count: usize = 0;
 
     marks.each_star(|Position { column, .. }| {
         cov.cover_column(column);
-        count += 1;
+        star_count += 1;
     });
 
-    if count >= n {
-        assert!(count == n);
-        Step::Done
+    if star_count >= n {
+        assert!(star_count == n);
+        Step3::Done
     } else {
-        Step::Step4(Some(count))
+        Step3::ContinueWithStep4 { star_count }
     }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+enum Step4 {
+    ContinueWithStep5 { z0_pos: Position },
+    ContinueWithStep6,
 }
 
 /// Find a noncovered zero and prime it. If there is no starred zero
@@ -130,7 +127,7 @@ where
 /// cover this row and uncover the column containing the starred
 /// zero. Continue in this manner until there are no uncovered zeros
 /// left. Save the smallest uncovered value and Go to Step 6.
-fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step
+fn step4<W>(c: &W, marks: &mut MarkMatrix, cov: &mut Coverage) -> Step4
 where
     W: Weights,
 {
@@ -142,9 +139,6 @@ where
     loop {
         // find uncovered zero element
         match cov.find_uncovered_cell_column_row_order(|pos| c.is_element_zero(pos)) {
-            None => {
-                return Step::Step6;
-            }
             Some(pos) => {
                 marks.prime(pos);
                 match marks.find_first_star_in_row(pos.row) {
@@ -154,12 +148,20 @@ where
                     }
                     None => {
                         // in Python: self.Z0_r, self.Z0_c
-                        return Step::Step5(pos);
+                        return Step4::ContinueWithStep5 { z0_pos: pos };
                     }
                 }
             }
+            None => {
+                return Step4::ContinueWithStep6;
+            }
         }
     }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+enum Step5 {
+    ContinueWithStep3,
 }
 
 /// Construct a series of alternating primed and starred zeros as
@@ -175,7 +177,7 @@ fn step5(
     cov: &mut Coverage,
     z0_pos: Position,
     path: &mut Vec<Position>,
-) -> Step {
+) -> Result<Step5, Error> {
     let n = cov.n();
 
     assert!(marks.n() == n);
@@ -198,7 +200,7 @@ fn step5(
                     prev_col = column;
                 } else {
                     // XXX: Can this really happen?
-                    return Step::Failure(Error::NoPrimeInRow);
+                    return Err(Error::NoPrimeInRow);
                 }
             }
             None => {
@@ -214,14 +216,19 @@ fn step5(
 
     cov.clear();
     marks.clear_primes();
-    return Step::Step3;
+    Ok(Step5::ContinueWithStep3)
+}
+
+#[derive(Debug, Eq, PartialEq)]
+enum Step6 {
+    ContinueWithStep4,
 }
 
 /// Add the value found in Step 4 to every element of each covered
 /// row, and subtract it from every element of each uncovered column.
 /// Return to Step 4 without altering any stars, primes, or covered
 /// lines.
-fn step6<W>(c: &mut W, cov: &Coverage) -> Step
+fn step6<W>(c: &mut W, cov: &Coverage) -> Result<Step6, Error>
 where
     W: Weights,
 {
@@ -252,9 +259,9 @@ where
             }
         }
 
-        Step::Step4(None)
+        Ok(Step6::ContinueWithStep4)
     } else {
-        Step::Failure(Error::MatrixNotSolvable)
+        Err(Error::MatrixNotSolvable)
     }
 }
 
@@ -272,46 +279,36 @@ where
     let mut coverage = Coverage::new(n);
     let mut path = Vec::with_capacity(n);
 
-    let mut step = Step::Step1;
-    loop {
-        match step {
-            Step::Step1 => step = step1(weights),
-            Step::Step2 => {
-                step = step2(weights, &mut marks, &mut coverage);
-            }
-            Step::Step3 => {
-                step = step3(weights, &marks, &mut coverage);
-            }
-            Step::Step4(_) => {
-                step = step4(weights, &mut marks, &mut coverage);
-            }
-            Step::Step5(z0_pos) => {
-                step = step5(&mut marks, &mut coverage, z0_pos, &mut path);
-            }
-            Step::Step6 => {
-                step = step6(weights, &coverage);
-            }
-            Step::Failure(err) => {
-                return Err(err);
-            }
-            Step::Done => {
-                break;
+    step1(weights);
+    step2(weights, &mut marks, &mut coverage);
+    'step3: loop {
+        match step3(weights, &marks, &mut coverage) {
+            Step3::ContinueWithStep4 { .. } => 'step4: loop {
+                match step4(weights, &mut marks, &mut coverage) {
+                    Step4::ContinueWithStep5 { z0_pos } => {
+                        match step5(&mut marks, &mut coverage, z0_pos, &mut path)? {
+                            Step5::ContinueWithStep3 => {
+                                continue 'step3;
+                            }
+                        }
+                    }
+                    Step4::ContinueWithStep6 => match step6(weights, &coverage)? {
+                        Step6::ContinueWithStep4 => {
+                            continue 'step4;
+                        }
+                    },
+                }
+            },
+            Step3::Done => {
+                break 'step3;
             }
         }
     }
 
     // now look for the starred elements
     let mut matching = Vec::with_capacity(n);
-    for row in 0..n {
-        for column in 0..n {
-            let pos = Position { row, column };
-            if marks.is_star(pos) {
-                matching.push(pos);
-            }
-        }
-    }
+    marks.each_star(|pos| matching.push(pos));
     assert!(matching.len() == n);
-
     return Ok(matching);
 }
 
@@ -327,8 +324,7 @@ fn test_step1() {
 
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
 
-    let next_step = step1(&mut weights);
-    assert_eq!(Step::Step2, next_step);
+    step1(&mut weights);
 
     let exp = &[0, 150, 100, 50, 250, 0, 0, 200, 50];
 
@@ -344,8 +340,7 @@ fn test_step2() {
     let mut marks = MarkMatrix::new(N);
     let mut coverage = Coverage::new(N);
 
-    let next_step = step2(&weights, &mut marks, &mut coverage);
-    assert_eq!(Step::Step3, next_step);
+    step2(&weights, &mut marks, &mut coverage);
 
     assert_eq!(true, marks.is_star(pos(0, 0)));
     assert_eq!(false, marks.is_star(pos(0, 1)));
@@ -381,7 +376,7 @@ fn test_step3() {
     marks.star(pos(1, 2));
 
     let next_step = step3(&weights, &marks, &mut coverage);
-    assert_eq!(Step::Step4(Some(2)), next_step);
+    assert_eq!(Step3::ContinueWithStep4 { star_count: 2 }, next_step);
 
     assert_eq!(true, coverage.is_column_covered(0));
     assert_eq!(false, coverage.is_column_covered(1));
@@ -408,7 +403,7 @@ fn test_step4_case1() {
 
     let next_step = step4(&weights, &mut marks, &mut coverage);
 
-    assert_eq!(Step::Step6, next_step);
+    assert_eq!(Step4::ContinueWithStep6, next_step);
 
     // coverage did not change.
     assert_eq!(true, coverage.is_column_covered(0));
@@ -446,7 +441,7 @@ fn test_step6() {
 
     let next_step = step6(&mut weights, &coverage);
 
-    assert_eq!(Step::Step4(None), next_step);
+    assert_eq!(Ok(Step6::ContinueWithStep4), next_step);
 
     let exp = &[0, 0, 100, 50, 100, 0, 0, 50, 50];
 
@@ -469,7 +464,7 @@ fn test_step4_case2() {
 
     let next_step = step4(&weights, &mut marks, &mut coverage);
 
-    assert_eq!(Step::Step5(pos(2, 0)), next_step);
+    assert_eq!(Step4::ContinueWithStep5 { z0_pos: pos(2, 0) }, next_step);
 
     // coverage DID CHANGE!
     assert_eq!(false, coverage.is_column_covered(0));
@@ -507,7 +502,7 @@ fn test_step5() {
 
     let mut path = Vec::new();
     let next_step = step5(&mut marks, &mut coverage, pos(2, 0), &mut path);
-    assert_eq!(Step::Step3, next_step);
+    assert_eq!(Ok(Step5::ContinueWithStep3), next_step);
 
     // coverage DID CHANGE!
     assert_eq!(false, coverage.is_column_covered(0));
@@ -560,16 +555,14 @@ fn test_solve_equal_rows_stepwise() {
 
     // step 1
 
-    let next_step = step1(&mut weights);
-    assert_eq!(Step::Step2, next_step);
+    step1(&mut weights);
     assert_eq!(&[0, 0, 0, 0], weights.as_slice());
 
     // step 2
 
     let mut marks = MarkMatrix::new(N);
     let mut coverage = Coverage::new(N);
-    let next_step = step2(&weights, &mut marks, &mut coverage);
-    assert_eq!(Step::Step3, next_step);
+    step2(&weights, &mut marks, &mut coverage);
     assert!(coverage.all_uncovered());
 
     assert!(marks.is_star(pos(0, 0)));
@@ -579,7 +572,7 @@ fn test_solve_equal_rows_stepwise() {
 
     // step 3
     let next_step = step3(&weights, &mut marks, &mut coverage);
-    assert_eq!(Step::Done, next_step);
+    assert_eq!(Step3::Done, next_step);
 }
 
 #[cfg(test)]
