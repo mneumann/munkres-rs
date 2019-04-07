@@ -118,7 +118,7 @@ where
     });
 
     if count >= n {
-        debug_assert!(count == n);
+        assert!(count == n);
         Step::Done
     } else {
         Step::Step4(Some(count))
@@ -228,35 +228,34 @@ where
     let n = c.n();
     assert!(cov.n() == n);
 
-    // Find the smallest uncovered value in the matrix
+    // Find the smallest, valid uncovered value in the matrix
     let mut min = None;
     cov.iter_uncovered_row_column_order(|pos| {
         let elm = c.element_at(pos);
-        min = Some(match min {
-            Some(m) => {
-                if m < elm {
-                    m
-                } else {
-                    elm
-                }
-            }
-            None => elm,
-        });
+        if elm.is_valid() {
+            min = Some(match min {
+                Some(m) if m < elm => m,
+                _ => elm,
+            });
+        }
     });
 
-    let minval = min.unwrap();
-    for row in 0..n {
-        if cov.is_row_covered(row) {
-            c.add_row(row, minval);
+    if let Some(minval) = min {
+        for row in 0..n {
+            if cov.is_row_covered(row) {
+                c.add_row(row, minval);
+            }
         }
-    }
-    for column in 0..n {
-        if !cov.is_column_covered(column) {
-            c.sub_column(column, minval);
+        for column in 0..n {
+            if !cov.is_column_covered(column) {
+                c.sub_column(column, minval);
+            }
         }
-    }
 
-    return Step::Step4(None);
+        Step::Step4(None)
+    } else {
+        Step::Failure(Error::MatrixNotSolvable)
+    }
 }
 
 pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<Position>, Error>
@@ -777,6 +776,31 @@ fn test_unsolvable() {
         1.0,
         1.0,
         1.0,
+    ];
+
+    let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());
+    let res = solve_assignment(&mut weights);
+    assert_eq!(Err(Error::MatrixNotSolvable), res);
+}
+
+#[test]
+fn test_unsolvable2() {
+    use std::f32;
+    const N: usize = 3;
+
+    let c = vec![
+        // row 0
+        f32::INFINITY,
+        400.0, // (a)
+        f32::INFINITY,
+        // row 1
+        f32::INFINITY,
+        400.0, // (a') collision!
+        f32::INFINITY,
+        // row 2
+        400.0,
+        250.0,
+        0.0,
     ];
 
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c.clone());

@@ -47,11 +47,6 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
                 return false;
             }
         }
-        for column in self.c.gencolumns() {
-            if column.iter().all(|c| !c.is_valid()) {
-                return false;
-            }
-        }
         true
     }
 }
