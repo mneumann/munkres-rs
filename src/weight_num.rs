@@ -3,8 +3,8 @@ use std::{f32, f64};
 
 pub trait WeightNum: PartialOrd + Copy + Sub<Output = Self> + Add<Output = Self> {
     fn is_zero(&self) -> bool;
-    fn is_disallowed(&self) -> bool {
-        false
+    fn is_valid(&self) -> bool {
+        true
     }
 }
 
@@ -84,8 +84,9 @@ impl WeightNum for f64 {
         *self == 0.0
     }
 
-    fn is_disallowed(&self) -> bool {
-        *self == f64::INFINITY
+    #[inline(always)]
+    fn is_valid(&self) -> bool {
+        self.is_finite()
     }
 }
 
@@ -95,7 +96,8 @@ impl WeightNum for f32 {
         *self == 0.0
     }
 
-    fn is_disallowed(&self) -> bool {
-        *self == f32::INFINITY
+    #[inline(always)]
+    fn is_valid(&self) -> bool {
+        self.is_finite()
     }
 }
