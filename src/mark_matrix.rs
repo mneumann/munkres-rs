@@ -36,15 +36,12 @@ impl MarkMatrix {
     }
 
     pub fn toggle_star(&mut self, pos: Position) {
-        if self.is_star(pos) {
-            self.unmark(pos);
+        let cell = self.marks.get_mut((pos.row, pos.column)).unwrap();
+        if *cell == Mark::Star {
+            *cell = Mark::None;
         } else {
-            self.star(pos);
+            *cell = Mark::Star;
         }
-    }
-
-    pub fn unmark(&mut self, pos: Position) {
-        self.set_mark(pos, Mark::None);
     }
 
     pub fn star(&mut self, pos: Position) {
@@ -77,56 +74,54 @@ impl MarkMatrix {
         }
     }
 
+    #[inline]
     pub fn each_star<F>(&self, mut f: F)
     where
         F: FnMut(Position),
     {
-        let n = self.n();
-
-        for row in 0..n {
-            for column in 0..n {
-                let pos = Position { row, column };
-                if self.is_star(pos) {
-                    f(pos);
+        for (row, row_data) in self.marks.genrows().into_iter().enumerate() {
+            for (column, &cell) in row_data.iter().enumerate() {
+                if cell == Mark::Star {
+                    f(Position { row, column });
                 }
             }
         }
+    }
+
+    fn find_first_mark_in_row(&self, row: usize, mark: Mark) -> Option<usize> {
+        self.marks
+            .row(row)
+            .iter()
+            .enumerate()
+            .find(|(_, &cell)| cell == mark)
+            .map(|(column, _)| column)
+    }
+
+    fn find_first_mark_in_column(&self, column: usize, mark: Mark) -> Option<usize> {
+        self.marks
+            .column(column)
+            .iter()
+            .enumerate()
+            .find(|(_, &cell)| cell == mark)
+            .map(|(row, _)| row)
     }
 
     pub fn find_first_star_in_row(&self, row: usize) -> Option<usize> {
-        for column in 0..self.n() {
-            if self.is_star(Position { row, column }) {
-                return Some(column);
-            }
-        }
-        return None;
+        self.find_first_mark_in_row(row, Mark::Star)
     }
 
     pub fn find_first_prime_in_row(&self, row: usize) -> Option<usize> {
-        for column in 0..self.n() {
-            if self.is_prime(Position { row, column }) {
-                return Some(column);
-            }
-        }
-        return None;
+        self.find_first_mark_in_row(row, Mark::Prime)
     }
 
     pub fn find_first_star_in_column(&self, column: usize) -> Option<usize> {
-        for row in 0..self.n() {
-            if self.is_star(Position { row, column }) {
-                return Some(row);
-            }
-        }
-        return None;
+        self.find_first_mark_in_column(column, Mark::Star)
     }
 
     pub fn clear_primes(&mut self) {
-        for row in 0..self.n() {
-            for column in 0..self.n() {
-                let pos = Position { row, column };
-                if self.is_prime(pos) {
-                    self.unmark(pos);
-                }
+        for cell in self.marks.iter_mut() {
+            if *cell == Mark::Prime {
+                *cell = Mark::None
             }
         }
     }
