@@ -33,9 +33,9 @@ impl Coverage {
         }
     }
 
-    /// find a single uncovered (row, column) pair. Iterates in column, row order.
+    /// Find the first uncovered cell. Iterates in column-major order.
     #[inline]
-    pub fn find_uncovered_column_row<F>(&self, mut f: F) -> Option<Position>
+    pub fn find_uncovered_cell_column_major<F>(&self, mut f: F) -> Option<Position>
     where
         F: FnMut(Position) -> bool,
     {
