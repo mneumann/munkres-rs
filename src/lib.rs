@@ -323,9 +323,10 @@ fn pos(row: usize, column: usize) -> Position {
 
 #[test]
 fn test_step1() {
+    const N: usize = 3;
     let c = vec![250, 400, 350, 400, 600, 350, 200, 400, 250];
 
-    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
+    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
 
     let next_step = step1(&mut weights);
     assert_eq!(Step::Step2, next_step);
@@ -337,11 +338,12 @@ fn test_step1() {
 
 #[test]
 fn test_step2() {
+    const N: usize = 3;
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
-    let mut coverage = Coverage::new(weights.n());
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
+    let mut marks = MarkMatrix::new(N);
+    let mut coverage = Coverage::new(N);
 
     let next_step = step2(&weights, &mut marks, &mut coverage);
     assert_eq!(Step::Step3, next_step);
@@ -369,11 +371,12 @@ fn test_step2() {
 
 #[test]
 fn test_step3() {
+    const N: usize = 3;
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
-    let mut coverage = Coverage::new(weights.n());
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
+    let mut marks = MarkMatrix::new(N);
+    let mut coverage = Coverage::new(N);
 
     marks.star(pos(0, 0));
     marks.star(pos(1, 2));
@@ -392,11 +395,12 @@ fn test_step3() {
 
 #[test]
 fn test_step4_case1() {
+    const N: usize = 3;
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
-    let mut coverage = Coverage::new(weights.n());
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
+    let mut marks = MarkMatrix::new(N);
+    let mut coverage = Coverage::new(N);
 
     marks.star(pos(0, 0));
     marks.star(pos(1, 2));
@@ -429,11 +433,12 @@ fn test_step4_case1() {
 
 #[test]
 fn test_step6() {
+    const N: usize = 3;
     let c = vec![0, 150, 100, 50, 250, 0, 0, 200, 50];
 
-    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
-    let mut coverage = Coverage::new(weights.n());
+    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
+    let mut marks = MarkMatrix::new(N);
+    let mut coverage = Coverage::new(N);
 
     marks.star(pos(0, 0));
     marks.star(pos(1, 2));
@@ -451,11 +456,12 @@ fn test_step6() {
 
 #[test]
 fn test_step4_case2() {
+    const N: usize = 3;
     let c = vec![0, 0, 100, 50, 100, 0, 0, 50, 50];
 
-    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
-    let mut coverage = Coverage::new(weights.n());
+    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
+    let mut marks = MarkMatrix::new(N);
+    let mut coverage = Coverage::new(N);
 
     marks.star(pos(0, 0));
     marks.star(pos(1, 2));
@@ -488,11 +494,9 @@ fn test_step4_case2() {
 
 #[test]
 fn test_step5() {
-    let c = vec![0, 0, 100, 50, 100, 0, 0, 50, 50];
-
-    let weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
-    let mut marks = MarkMatrix::new(weights.n());
-    let mut coverage = Coverage::new(weights.n());
+    const N: usize = 3;
+    let mut marks = MarkMatrix::new(N);
+    let mut coverage = Coverage::new(N);
 
     marks.star(pos(0, 0));
     marks.prime(pos(0, 1));
@@ -530,13 +534,14 @@ fn test_step5() {
 
 #[test]
 fn test_solve() {
+    const N: usize = 3;
     let c = vec![
         250, 400, 350, // row 1
         400, 600, 350, // row 2
         200, 400, 250, // row 3
     ];
 
-    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
+    let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(N, c);
     let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(vec![pos(0, 1), pos(1, 2), pos(2, 0)], matching);
@@ -562,8 +567,8 @@ fn test_solve_equal_rows_stepwise() {
 
     // step 2
 
-    let mut marks = MarkMatrix::new(weights.n());
-    let mut coverage = Coverage::new(weights.n());
+    let mut marks = MarkMatrix::new(N);
+    let mut coverage = Coverage::new(N);
     let next_step = step2(&weights, &mut marks, &mut coverage);
     assert_eq!(Step::Step3, next_step);
     assert!(coverage.all_uncovered());
@@ -680,8 +685,9 @@ fn test_solve_random10() {
 }
 
 #[test]
-fn test_disallowed() {
+fn test_invalid() {
     use std::f32;
+    const N: usize = 3;
 
     let c = vec![
         250.0,
@@ -695,7 +701,7 @@ fn test_disallowed() {
         250.0,
     ];
 
-    let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(3, c);
+    let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(N, c);
     let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(vec![pos(0, 1), pos(1, 0), pos(2, 2)], matching);
