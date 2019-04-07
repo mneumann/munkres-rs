@@ -1,12 +1,12 @@
 [package]
 name = "munkres"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/mneumann/munkres-rs"
 description = "Kuhn-Munkres (aka Hungarian) algorithm for solving the Assignment Problem in O(n^3)"
 keywords = ["algorithm", "optimization"]
-include = ["src/*.rs", "Cargo.toml", "LICENSE", "README.md"]
+include = ["src/*.rs", "benches/*.rs", "Cargo.toml", "LICENSE", "README.md"]
 edition = "2018"
 
 [dependencies]
