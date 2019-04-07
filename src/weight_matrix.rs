@@ -31,14 +31,14 @@ impl<T: WeightNum> Weights for WeightMatrix<T> {
     fn add_row(&mut self, row: usize, val: T) {
         self.c
             .row_mut(row)
-            .mapv_inplace(|cur| if cur.is_valid() { cur + val } else { cur });
+            .mapv_inplace(|cur| cur.add_if_valid(val));
     }
 
     // Subtract `val` from every element in column `col`.
     fn sub_column(&mut self, col: usize, val: T) {
         self.c
             .column_mut(col)
-            .mapv_inplace(|cur| if cur.is_valid() { cur - val } else { cur });
+            .mapv_inplace(|cur| cur.sub_if_valid(val));
     }
 
     fn is_solvable(&self) -> bool {
@@ -81,7 +81,7 @@ impl<T: WeightNum> WeightMatrix<T> {
     fn sub_row(&mut self, row: usize, val: T) {
         self.c
             .row_mut(row)
-            .mapv_inplace(|cur| if cur.is_valid() { cur - val } else { cur });
+            .mapv_inplace(|cur| cur.sub_if_valid(val));
     }
 
     pub fn as_slice(&self) -> &[T] {

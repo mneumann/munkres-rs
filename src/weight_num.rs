@@ -6,6 +6,20 @@ pub trait WeightNum: PartialOrd + Copy + Sub<Output = Self> + Add<Output = Self>
     fn is_valid(&self) -> bool {
         true
     }
+    fn add_if_valid(self, other: Self) -> Self {
+        if self.is_valid() {
+            self + other
+        } else {
+            self
+        }
+    }
+    fn sub_if_valid(self, other: Self) -> Self {
+        if self.is_valid() {
+            self - other
+        } else {
+            self
+        }
+    }
 }
 
 impl WeightNum for usize {
