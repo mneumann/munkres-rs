@@ -82,7 +82,7 @@ where
 
     assert!(marks.n() == n);
     assert!(cov.n() == n);
-    debug_assert!(cov.is_clear());
+    debug_assert!(cov.all_uncovered());
 
     cov.iter_uncovered_row_column_and_cover(|pos| {
         if c.is_element_zero(pos) {
@@ -575,7 +575,7 @@ fn test_solve_equal_rows_stepwise() {
     let mut coverage = Coverage::new(weights.n());
     let next_step = step2(&weights, &mut marks, &mut coverage);
     assert_eq!(Step::Step3, next_step);
-    assert!(coverage.is_clear());
+    assert!(coverage.all_uncovered());
 
     assert!(marks.is_star(pos(0, 0)));
     assert!(marks.is_star(pos(1, 1)));

@@ -4,17 +4,10 @@ use fixedbitset::FixedBitSet;
 #[derive(Debug)]
 pub struct Coverage {
     n: usize,
+    /// A bit is set, if the row is covered.
     rows: FixedBitSet,
+    /// A bit is set, if the column is covered.
     columns: FixedBitSet,
-}
-
-fn is_bitset_clear(bitset: &FixedBitSet) -> bool {
-    for elm in bitset.as_slice().iter() {
-        if *elm != 0 {
-            return false;
-        }
-    }
-    return true;
 }
 
 impl Coverage {
@@ -151,7 +144,16 @@ impl Coverage {
         self.columns.clear();
     }
 
-    pub fn is_clear(&self) -> bool {
+    pub fn all_uncovered(&self) -> bool {
         is_bitset_clear(&self.rows) && is_bitset_clear(&self.columns)
     }
+}
+
+fn is_bitset_clear(bitset: &FixedBitSet) -> bool {
+    for elm in bitset.as_slice().iter() {
+        if *elm != 0 {
+            return false;
+        }
+    }
+    return true;
 }
