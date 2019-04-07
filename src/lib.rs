@@ -142,7 +142,7 @@ where
 
     loop {
         // find uncovered zero element
-        match cov.find_uncovered_cell_column_major(|pos| c.is_element_zero(pos)) {
+        match cov.find_uncovered_cell_column_row_order(|pos| c.is_element_zero(pos)) {
             None => {
                 return Step::Step6;
             }

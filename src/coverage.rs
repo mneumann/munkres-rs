@@ -35,21 +35,12 @@ impl Coverage {
 
     /// Find the first uncovered cell. Iterates in column-major order.
     #[inline]
-    pub fn find_uncovered_cell_column_major<F>(&self, mut f: F) -> Option<Position>
+    pub fn find_uncovered_cell_column_row_order<F>(&self, mut f: F) -> Option<Position>
     where
         F: FnMut(Position) -> bool,
     {
-        let n = self.n();
-
-        for column in 0..n {
-            if self.is_column_covered(column) {
-                continue;
-            }
-            for row in 0..n {
-                if self.is_row_covered(row) {
-                    continue;
-                }
-
+        for column in self.uncovered_columns.ones() {
+            for row in self.uncovered_rows.ones() {
                 let pos = Position { row, column };
                 if f(pos) {
                     return Some(pos);
