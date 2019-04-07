@@ -22,7 +22,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                 let _matching = solve_assignment(&mut weights);
             })
         },
-        vec![100],
+        vec![50],
     );
 }
 
