@@ -26,12 +26,6 @@ pub struct Position {
     pub column: usize,
 }
 
-impl std::convert::From<(usize, usize)> for Position {
-    fn from((row, column): (usize, usize)) -> Self {
-        Position { row, column }
-    }
-}
-
 pub trait Weights {
     type T: WeightNum;
     fn n(&self) -> usize;
@@ -92,7 +86,7 @@ where
 
     cov.iter_uncovered_row_column_and_cover(|pos| {
         if c.is_element_zero(pos) {
-            marks.star(pos.into());
+            marks.star(pos);
             true
         } else {
             false
@@ -181,27 +175,30 @@ fn step5(
     marks: &mut impl MarkMatrix,
     cov: &mut Coverage,
     z0_pos: Position,
-    path: &mut Vec<(usize, usize)>,
+    path: &mut Vec<Position>,
 ) -> Step {
     let n = cov.n();
 
     assert!(marks.n() == n);
 
     path.clear();
-    path.push((z0_pos.row, z0_pos.column));
+    path.push(z0_pos);
 
     let mut prev_col = z0_pos.column;
 
     loop {
         match marks.find_first_star_in_column(prev_col) {
             Some(row) => {
-                path.push((row, prev_col));
+                path.push(Position {
+                    row,
+                    column: prev_col,
+                });
 
                 if let Some(column) = marks.find_first_prime_in_row(row) {
-                    path.push((row, column));
+                    path.push(Position { row, column });
                     prev_col = column;
                 } else {
-                    // XXX: Can this really happend?
+                    // XXX: Can this really happen?
                     return Step::Failure(Error::NoPrimeInRow);
                 }
             }
@@ -213,7 +210,7 @@ fn step5(
 
     // convert_path
     for &pos in path.iter() {
-        marks.toggle_star(pos.into());
+        marks.toggle_star(pos);
     }
 
     cov.clear();
@@ -263,14 +260,14 @@ where
     return Step::Step4(None);
 }
 
-pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<(usize, usize)>, Error>
+pub fn solve_assignment<W>(weights: &mut W) -> Result<Vec<Position>, Error>
 where
     W: Weights,
 {
     solve_assignment_generic::<W, MarkMatrixImpl>(weights)
 }
 
-pub fn solve_assignment_generic<W, M>(weights: &mut W) -> Result<Vec<(usize, usize)>, Error>
+pub fn solve_assignment_generic<W, M>(weights: &mut W) -> Result<Vec<Position>, Error>
 where
     W: Weights,
     M: MarkMatrix,
@@ -317,8 +314,9 @@ where
     let mut matching = Vec::with_capacity(n);
     for row in 0..n {
         for column in 0..n {
-            if marks.is_star(Position { row, column }) {
-                matching.push((row, column));
+            let pos = Position { row, column };
+            if marks.is_star(pos) {
+                matching.push(pos);
             }
         }
     }
@@ -550,7 +548,7 @@ fn test_solve() {
     let mut weights: WeightMatrix<i32> = WeightMatrix::from_row_vec(3, c);
     let matching = solve_assignment(&mut weights).unwrap();
 
-    assert_eq!(vec![(0, 1), (1, 2), (2, 0)], matching);
+    assert_eq!(vec![pos(0, 1), pos(1, 2), pos(2, 0)], matching);
 }
 
 #[test]
@@ -589,6 +587,17 @@ fn test_solve_equal_rows_stepwise() {
     assert_eq!(Step::Done, next_step);
 }
 
+#[cfg(test)]
+fn calc_cost<T>(init_cost: T, c: &[T], matching: &[Position], n: usize) -> T
+where
+    T: WeightNum,
+{
+    assert!(c.len() == n * n);
+    matching
+        .iter()
+        .fold(init_cost, |sum, pos| sum + c[pos.row * n + pos.column])
+}
+
 #[test]
 fn test_solve_equal_rows2() {
     const N: usize = 2;
@@ -598,13 +607,7 @@ fn test_solve_equal_rows2() {
     let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
-
-    let mut cost = 0;
-    for &(row, col) in &matching[..] {
-        cost += c[row * N + col];
-    }
-
-    assert_eq!(3, cost);
+    assert_eq!(3, calc_cost(0, &c[..], &matching[..], N));
 }
 
 #[test]
@@ -618,13 +621,7 @@ fn test_solve_equal_rows5() {
     let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
-
-    let mut cost = 0;
-    for &(row, col) in &matching[..] {
-        cost += c[row * N + col];
-    }
-
-    assert_eq!(2, cost);
+    assert_eq!(2, calc_cost(0, &c[..], &matching[..], N));
 }
 
 #[test]
@@ -639,13 +636,7 @@ fn test_solve_equal_rows5_float() {
     let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
-
-    let mut cost = 0.0;
-    for &(row, col) in &matching[..] {
-        cost += c[row * N + col];
-    }
-
-    assert_eq!(2.0, cost);
+    assert_eq!(2.0, calc_cost(0.0, &c[..], &matching[..], N));
 }
 
 #[test]
@@ -660,13 +651,7 @@ fn test_solve_equal_rows5_float2() {
     let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
-
-    let mut cost = 0.0;
-    for &(row, col) in &matching[..] {
-        cost += c[row * N + col];
-    }
-
-    assert_eq!(3.0, cost);
+    assert_eq!(3.0, calc_cost(0.0, &c[..], &matching[..], N));
 }
 
 #[test]
@@ -685,25 +670,19 @@ fn test_solve_random10() {
     let matching = solve_assignment(&mut weights).unwrap();
 
     assert_eq!(N, matching.len());
-
-    let mut cost = 0;
-    for &(row, col) in &matching[..] {
-        cost += c[row * N + col];
-    }
-
-    assert_eq!(1071, cost);
+    assert_eq!(1071, calc_cost(0, &c[..], &matching[..], N));
 
     let exp = &[
-        (0, 7),
-        (1, 9),
-        (2, 3),
-        (3, 4),
-        (4, 1),
-        (5, 0),
-        (6, 5),
-        (7, 6),
-        (8, 2),
-        (9, 8),
+        pos(0, 7),
+        pos(1, 9),
+        pos(2, 3),
+        pos(3, 4),
+        pos(4, 1),
+        pos(5, 0),
+        pos(6, 5),
+        pos(7, 6),
+        pos(8, 2),
+        pos(9, 8),
     ];
 
     assert_eq!(exp, &matching[..]);
@@ -728,7 +707,7 @@ fn test_disallowed() {
     let mut weights: WeightMatrix<f32> = WeightMatrix::from_row_vec(3, c);
     let matching = solve_assignment(&mut weights).unwrap();
 
-    assert_eq!(vec![(0, 1), (1, 0), (2, 2)], matching);
+    assert_eq!(vec![pos(0, 1), pos(1, 0), pos(2, 2)], matching);
 }
 
 #[test]
