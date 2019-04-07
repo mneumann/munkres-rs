@@ -152,8 +152,8 @@ impl MarkMatrix for MarkMatrixBitArray {
     fn new(n: usize) -> Self {
         Self {
             n,
-            stars: FixedBitSet::with_capacity(n),
-            primes: FixedBitSet::with_capacity(n),
+            stars: FixedBitSet::with_capacity(n * n),
+            primes: FixedBitSet::with_capacity(n * n),
         }
     }
 
