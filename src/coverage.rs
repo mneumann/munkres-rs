@@ -5,9 +5,9 @@ use fixedbitset::FixedBitSet;
 pub struct Coverage {
     n: usize,
     /// A bit is set, if the row is covered.
-    rows: FixedBitSet,
+    covered_rows: FixedBitSet,
     /// A bit is set, if the column is covered.
-    columns: FixedBitSet,
+    covered_columns: FixedBitSet,
 }
 
 impl Coverage {
@@ -20,8 +20,8 @@ impl Coverage {
         assert!(n > 0);
         Coverage {
             n: n,
-            rows: FixedBitSet::with_capacity(n),
-            columns: FixedBitSet::with_capacity(n),
+            covered_rows: FixedBitSet::with_capacity(n),
+            covered_columns: FixedBitSet::with_capacity(n),
         }
     }
 
@@ -106,13 +106,13 @@ impl Coverage {
     #[inline]
     pub fn is_row_covered(&self, row: usize) -> bool {
         debug_assert!(row < self.n());
-        self.rows.contains(row)
+        self.covered_rows.contains(row)
     }
 
     #[inline]
     pub fn is_column_covered(&self, column: usize) -> bool {
         debug_assert!(column < self.n());
-        self.columns.contains(column)
+        self.covered_columns.contains(column)
     }
 
     #[inline]
@@ -124,28 +124,28 @@ impl Coverage {
     #[inline]
     pub fn cover_column(&mut self, column: usize) {
         debug_assert!(column < self.n());
-        self.columns.set(column, true);
+        self.covered_columns.set(column, true);
     }
 
     #[inline]
     pub fn uncover_column(&mut self, column: usize) {
         debug_assert!(column < self.n());
-        self.columns.set(column, false);
+        self.covered_columns.set(column, false);
     }
 
     #[inline]
     pub fn cover_row(&mut self, row: usize) {
         debug_assert!(row < self.n());
-        self.rows.set(row, true);
+        self.covered_rows.set(row, true);
     }
 
     pub fn clear(&mut self) {
-        self.rows.clear();
-        self.columns.clear();
+        self.covered_rows.clear();
+        self.covered_columns.clear();
     }
 
     pub fn all_uncovered(&self) -> bool {
-        is_bitset_clear(&self.rows) && is_bitset_clear(&self.columns)
+        is_bitset_clear(&self.covered_rows) && is_bitset_clear(&self.covered_columns)
     }
 }
 
