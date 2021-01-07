@@ -1,6 +1,6 @@
 [package]
 name = "munkres"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/mneumann/munkres-rs"
@@ -10,11 +10,11 @@ include = ["src/*.rs", "benches/*.rs", "Cargo.toml", "LICENSE", "README.md"]
 edition = "2018"
 
 [dependencies]
-fixedbitset = "0.1"
-ndarray = "0.12"
+fixedbitset = "0.3"
+ndarray = "0.14"
 
 [dev-dependencies]
-criterion = "0.2"
+criterion = "0.3"
 
 [[bench]]
 name = "solve_assignment"
