@@ -1,6 +1,6 @@
 use crate::{Position, SquareMatrix, WeightNum, Weights};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WeightMatrix<T: WeightNum> {
     c: SquareMatrix<T>,
 }
